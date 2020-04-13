@@ -1,0 +1,28 @@
+LDI 15
+STA x
+
+LDI 15
+STA y
+
+LDI 0
+STA res
+
+KEEP_DOING:
+LDA y
+SEI 1
+
+JC STOP
+
+STA y
+
+LDA res
+ADD x
+STA res
+
+JMP KEEP_DOING
+
+STOP:
+LDA res
+OUT
+HLT
+
