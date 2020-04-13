@@ -1,4 +1,4 @@
-# Simple 8-bit machine compiler\
+# Simple 8-bit machine compiler
 Based on the architecture of Ben Eater's 8-bit computer, and comeup with my own code word.\
 (Pss.. If you have not check his videos, please check them!! Really well-explained!!)
 
