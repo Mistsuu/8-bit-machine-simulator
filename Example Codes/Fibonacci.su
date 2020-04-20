@@ -1,0 +1,21 @@
+BEGIN:
+  LDI 1
+  STA y
+  
+  LDI 0
+  STA x
+
+LOOP:
+  ADD y
+  STA res
+  
+  JC BEGIN
+  OUT
+  LDA y
+  STA x
+  
+  LDA res
+  STA y
+  
+  LDA x
+  JMP LOOP

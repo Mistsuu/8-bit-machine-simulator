@@ -1,0 +1,61 @@
+# ATTENTION GUYS:
+# This code is not zero-safe: 
+# Means that it'll fuck up when
+# y == 0
+# Damn, but it saved 80 cycles.
+# ... Worth it? 
+
+################## Where the program begin ##########################
+LDI 2
+STA x       # Load 1 to <x>
+
+LDI 127
+STA y       # Load 129 to <y>
+
+LDI 0
+STA result  # Load 0 to <result>
+
+################## Check if y equals to 0 ###########################
+LOOP:
+LDA x
+STA result_tmp   # Load content in <x> to <result_tmp>
+
+LDI 1
+STA y_tmp        # Load 1 to <y_tmp>
+
+################## Keep shifting y_tmp ############################
+COMPARE:
+SHL y_tmp        # This is what makes the code cannot run if <y> >= 128
+SUB y
+
+JC IF_NOT_BIGGER
+
+################# If (y_tmp << 1) <= y #############################
+
+SHL result_tmp
+STA result_tmp
+
+SHL y_tmp
+STA y_tmp
+
+JMP COMPARE
+
+################### If (y_tmp << 1) > y ############################
+IF_NOT_BIGGER:
+
+LDA result
+ADD result_tmp
+STA result       # Add <result_tmp> to <result>, stored back to <result> again
+
+LDA y
+SUB y_tmp
+STA y            # Subtract <y_tmp> from <y>, stored back to <y> again
+JZ PRINT_RESULT  # if y == 0, jump to PRINT_RESULT
+
+JMP LOOP
+
+################## Print the result ################################
+PRINT_RESULT:
+LDA result
+OUT
+HLT

@@ -1,0 +1,21 @@
+######## Set up variables by code ###########
+ldi 64
+sta 55
+
+ldi 48
+sta 64
+
+ldi 30
+sta 48
+
+ldi 55
+sta 30
+
+
+####### Code run #############################
+run:
+lda 55
+out
+
+sta 17
+jmp run
