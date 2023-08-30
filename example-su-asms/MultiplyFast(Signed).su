@@ -7,7 +7,7 @@
 
 ################## Where the program begin ##########################
 LDI 2
-STA x       # Load 1 to <x>
+STA x       # Load 2 to <x>
 
 LDI 127
 STA y       # Load 129 to <y>
