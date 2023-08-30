@@ -202,7 +202,7 @@ bool compile(string filename, vector<int> &RAMContent) {
 
     if (isTag(opcode)) continue; // Skip tags
     else if (!isInstruction(opcode)) {
-      cout << "[error] Instruction not recognized." << endl;
+      cout << "[error] Instruction not recognized (opcode:" << opcode << " )." << endl;
       return false;
     }
     else RAMContent.push_back(code[opcode] << 4);
