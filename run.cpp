@@ -4,8 +4,18 @@
 #include <vector>
 #include <stack>
 #include <map>
-#include <windows.h>
-#include <conio.h>
+
+#ifdef(_WIN32)
+  #include <windows.h>
+  #include <conio.h>
+#else
+  #include <sys/select.h>
+  #include <termios.h>
+  #if HAVE_STROPTS_H
+    #include <stropts.h>
+  #endif
+#endif
+
 using namespace std;
 
 #define CLK_SPEED 1000 // Limited to 100 HZ
@@ -47,14 +57,8 @@ const uint8_t ENTER    = 13;
 const uint8_t SPACE    = 32;
 
 ////////////////////// Output info ///////////////////////////////////////
-COORD cursorPos;
 
 uint8_t RAMContent[256];     // To simulate memory of 256 bytes of codes
-bool startDisplay = true;    // To let console know if we need to wipe the screen
-uint8_t OutputMode = SIGNED;
-uint8_t DebugMode  = MANUAL;
-
-int cycleCounting = 0;
 
 void outputBinary(uint8_t number) {
   for (int i = 7; i >= 0; --i) {
@@ -163,53 +167,133 @@ bool checkData(string filename) {
   return true;
 }
 
+////////////////////// _getch(), _kbhit() on Linux ///////////////////
+
+static struct termios old, current;
+
+/* Initialize new terminal i/o settings */
+void initTermios(int echo) 
+{
+  tcgetattr(0, &old); /* grab old terminal i/o settings */
+  current = old; /* make new settings same as old settings */
+  current.c_lflag &= ~ICANON; /* disable buffered i/o */
+  if (echo) {
+    current.c_lflag |= ECHO; /* set echo mode */
+  } else {
+    current.c_lflag &= ~ECHO; /* set no echo mode */
+  }
+  tcsetattr(0, TCSANOW, &current); /* use these new terminal i/o settings now */
+}
+
+/* Restore old terminal i/o settings */
+void resetTermios(void) 
+{
+  tcsetattr(0, TCSANOW, &old);
+}
+
+/* Read 1 character - echo defines echo mode */
+char getch(int echo) 
+{
+  char ch;
+  initTermios(echo);
+  ch = getchar();
+  resetTermios();
+  return ch;
+}
+
+/* Read 1 character without echo */
+char _getch(void) 
+{
+  return getch(0);
+}
+
+/* Read 1 character with echo */
+char _getche(void) 
+{
+  return getch(1);
+}
+
+int _kbhit() {
+  static const int STDIN = 0;
+  static bool initialized = false;
+
+  if (! initialized) {
+    // Use termios to turn off line buffering
+    termios term;
+    tcgetattr(STDIN, &term);
+    term.c_lflag &= ~ICANON;
+    tcsetattr(STDIN, TCSANOW, &term);
+    setbuf(stdin, NULL);
+    initialized = true;
+  }
+
+  int bytesWaiting;
+  ioctl(STDIN, FIONREAD, &bytesWaiting);
+  return bytesWaiting;
+}
+
+////////////////////// Screen handling ///////////////////////////////
+uint8_t OutputMode    = SIGNED;
+uint8_t DebugMode     = MANUAL;
+int     cycleCounting = 0;
+bool    startDisplay  = true;    // To let console know if we need to wipe the screen
+#ifdef(_WIN32)
+  COORD cursorPos;
+#endif
+
 inline void resetCursor() {
-  SetConsoleCursorPosition(
-    GetStdHandle(STD_OUTPUT_HANDLE),
-    cursorPos
+  #ifdef(_WIN32)
+    SetConsoleCursorPosition(
+      GetStdHandle(STD_OUTPUT_HANDLE),
+      cursorPos
     );
+  #endif
 }
 
 inline bool writeBlank() {
-  // Get screen size
-  CONSOLE_SCREEN_BUFFER_INFO csbi;
-  COORD screenSize;
-  if (!GetConsoleScreenBufferInfo(
-        GetStdHandle( STD_OUTPUT_HANDLE ),
-        &csbi
-        ))
-    return false;
-  screenSize = csbi.dwSize;
+  #ifdef(_WIN32)
+    // Get screen size
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    COORD screenSize;
+    if (!GetConsoleScreenBufferInfo(
+          GetStdHandle( STD_OUTPUT_HANDLE ),
+          &csbi
+      ))
+      return false;
+    screenSize = csbi.dwSize;
 
-  // Write ' ' to the next 5 lines
-  string screenBuf = "";
-  for (int y = 0; y < 5; ++y) {
-    for (int x = 0; x < screenSize.X; ++x) {
-      screenBuf += " ";
+    // Write ' ' to the next 5 lines
+    string screenBuf = "";
+    for (int y = 0; y < 5; ++y) {
+      for (int x = 0; x < screenSize.X; ++x) {
+        screenBuf += " ";
+      }
+      screenBuf += "\n";
     }
-    screenBuf += "\n";
-  }
-  cout << screenBuf;
-  return true;
+    cout << screenBuf;
+    return true;
+  #endif
 }
 
 void clearOutput() {
   resetCursor();
-//  writeBlank();
+  writeBlank();
 //  resetCursor();
 }
 
 bool getStartLocation()
 {
-  CONSOLE_SCREEN_BUFFER_INFO csbi;
-  if (!GetConsoleScreenBufferInfo(
-        GetStdHandle( STD_OUTPUT_HANDLE ),
-        &csbi
-        ))
-    return false;
+  #ifdef(_WIN32)
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    if (!GetConsoleScreenBufferInfo(
+          GetStdHandle( STD_OUTPUT_HANDLE ),
+          &csbi
+          ))
+      return false;
 
-  cursorPos = csbi.dwCursorPosition;
-  return true;
+    cursorPos = csbi.dwCursorPosition;
+    return true;
+  #endif
 }
 
 inline void displayInfo() {
@@ -279,20 +363,21 @@ inline void displayInfo() {
 
 bool controlDisplay() {
   if (DebugMode == MANUAL) {
-    FlushConsoleInputBuffer(GetStdHandle(STD_INPUT_HANDLE));
-    while (!_kbhit()) {
-      if (ProgramRun == 0) return false;
-    }
+    #ifdef(_WIN32)
+      FlushConsoleInputBuffer(GetStdHandle(STD_INPUT_HANDLE));
+    #endif
+
+    while (!_kbhit())
+      if (ProgramRun == 0) 
+        return false;
 
     char ch = _getch();
     if (ch == ' ')
       return true;
-    else if (ch == ENTER) {
+    else if (ch == ENTER)
       DebugMode = AUTO;
-    }
-    else {
+    else
       return controlDisplay();
-    }
   }
 
   if (DebugMode == AUTO) {
@@ -313,10 +398,13 @@ bool updateDisplay() {
   }
 
   displayInfo();
-  if (!controlDisplay()) return false;
+  if (!controlDisplay()) 
+    return false;
 
   return true;
 }
+
+////////////////////// Main loop ///////////////////////////////////
 
 uint8_t performArithmetic(uint8_t A, uint8_t B, uint8_t &ZeroFlag, uint8_t &CarryFlag, bool SUB_FLAG, bool FLAG_IN) {
   uint16_t A_16   = A & 0b11111111;
@@ -431,14 +519,16 @@ void run() {
         break;
 
       case JC:
-        if (CarryFlag == 0) break;
+        if (CarryFlag == 0) 
+          break;
 
         ProgramCounter = RAMContent[MemRegister];
         if (!updateDisplay()) return;
         break;
 
       case JZ:
-        if (ZeroFlag == 0) break;
+        if (ZeroFlag == 0) 
+          break;
 
         ProgramCounter = RAMContent[MemRegister];
         if (!updateDisplay()) return;
@@ -508,16 +598,21 @@ void run() {
   }
 }
 
+////////////////////// Initialize ///////////////////////////////////
+
 void checkInterupt(int signal) {
   // Stops the program.
   ProgramRun = 0;
 }
 
 int main(int argc, char* argv[]) {
-  if (!checkArgumentError(argc, argv)) return -1;
+  if (!checkArgumentError(argc, argv)) 
+    return -1;
+  
   if (checkData(string(argv[1]))) {
     signal(SIGINT, checkInterupt);
     run();
   }
+
   cout << endl << "[debug] Program finished after " << cycleCounting << " cycles." << endl;
 }
