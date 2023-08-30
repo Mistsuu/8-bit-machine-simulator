@@ -250,8 +250,10 @@ int cycleCounting = 0;
   } while(0)                
 
   void clearOutput() {
-    move(7, 0);
-    clrtoeol();
+    if (ProgramRun) {
+      move(7, 0);
+      clrtoeol();
+    }
   }
 
   int kbhit() {
@@ -704,15 +706,8 @@ bool initScreen() {
 void checkInterupt(int signal) {
   // Stops the program.
   ProgramRun = 0;
-  #if defined(WIN32) && !defined(__unix__)
-    cout << endl;
-  #elif defined(__unix__) && !defined(WIN32)
-    clear();
-    refresh();
-    sleep(1);
-    endwin();
-    sleep(1);
-  #endif
+  cout << endl;
+  cout << "[debug] Program finished after " << cycleCounting << " cycles." << endl;
 }
 
 int main(int argc, char* argv[]) {
@@ -724,9 +719,9 @@ int main(int argc, char* argv[]) {
 
   if (!initScreen())
     return -3;
-    
-  signal(SIGINT, checkInterupt);
+  
+  #if defined(WIN32) && !defined(__unix__)
+    signal(SIGINT, checkInterupt);
+  #endif
   run();
-
-  cout << "[debug] Program finished after " << cycleCounting << " cycles." << endl;
 }
