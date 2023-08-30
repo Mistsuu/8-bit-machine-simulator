@@ -35,8 +35,6 @@ You can find the files ending with `.su` *(Mist**"su"**u, surpriseee)* in the `e
 ./run examples-su-asms/Fibonacci.out
 ```
 
-
-
 Here is the output image:
 
 ![](img/run-run)
