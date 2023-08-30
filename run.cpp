@@ -69,7 +69,7 @@ bool checkArgumentError(int argc, char* argv[]) {
   }
 
   if (string(argv[1]).find(".out") == string::npos) {
-    cout << "[error] Wrong input format file." << endl;
+    cout << "[error] Wrong input format filename. Filename \"" << string(argv[1]) << "\" does not start with \".out\"!" << endl;
     return false;
   }
 
@@ -118,7 +118,7 @@ bool checkData(string filename) {
 
   byteFile.open(filename, fstream::in);
   if (!byteFile) {
-    cout << "[error] Cannot open code file!" << endl;
+    cout << "[error] Cannot open code file \"" << filename << "\"!" << endl;
     return false;
   }
 

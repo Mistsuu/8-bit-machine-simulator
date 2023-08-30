@@ -23,3 +23,9 @@ g++ run.cpp -o run
 
 ## How to use
 You can find the files ending with `.su` *(Mist**"su"**u, surpriseee)* in the `example-su-asms` folder. They are my own test assembly babies. You could compile them with the `parser` file. It will drop out a similar file name with `.out` ending, and you use `run` file to run that!
+
+```bash
+./parser examples-su-asms/Fibonacci.su
+./run Fibonacci.out
+```
+

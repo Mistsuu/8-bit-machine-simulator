@@ -126,7 +126,7 @@ bool compile(string filename, vector<int> &RAMContent) {
   // Open file
   codeFile.open(filename, fstream::in);
   if (!codeFile) {
-    cout << "[error] No such file is found." << endl;
+    cout << "[error] No such file \"" << filename << "\" is found." << endl;
     return false;
   }
 
@@ -310,6 +310,7 @@ int main(int argc, char *argv[]) {
   mapOPCode();
 
   if (argc <= 1) {
+    cout << "[usage] " << argv[0] << " <Source.su>" << endl;
     cout << "[error] No Arguments Given For The Program!" << endl;
     return 0;
   }
