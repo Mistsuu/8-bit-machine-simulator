@@ -18,7 +18,7 @@
 
 using namespace std;
 
-#define CLK_SPEED 10 // Limited to 100 HZ
+#define CLK_SPEED 100 // Limited to 100 HZ
 
 #define NOP 0b0000
 #define LDA 0b0001
@@ -238,6 +238,7 @@ int cycleCounting = 0;
     displayInfo();
     return controlDisplay();
   }
+  
 #elif defined(__unix__) && !defined(WIN32)
   uint8_t OutputMode   = SIGNED;
   uint8_t DebugMode    = MANUAL;
@@ -370,7 +371,7 @@ int cycleCounting = 0;
       safe_printw("%d", OutRegister);
     else
       safe_printw("%u", OutRegister);
-    safe_printw("]]  ");
+    safe_printw("]]  \n");
   }
 
   bool updateDisplay() {
@@ -707,7 +708,21 @@ void checkInterupt(int signal) {
   // Stops the program.
   ProgramRun = 0;
   cout << endl;
-  cout << "[debug] Program finished after " << cycleCounting << " cycles." << endl;
+  cout << "[debug] Program abruptly exit after " << cycleCounting << " cycles." << endl;
+}
+
+void closeProgram() {
+  #if defined(WIN32) && !defined(__unix__)
+    cout << endl;
+    cout << "[debug] Program finished after " << cycleCounting << " cycles." << endl;
+  #elif defined(__unix__) && !defined(WIN32)
+    printw("\n");
+    printw("Program finished after %d cycles.\n", cycleCounting);
+    printw("Press anykey to quit...\n");
+    while (!kbhit()) 
+      usleep(100000);
+    endwin();
+  #endif
 }
 
 int main(int argc, char* argv[]) {
@@ -723,5 +738,7 @@ int main(int argc, char* argv[]) {
   #if defined(WIN32) && !defined(__unix__)
     signal(SIGINT, checkInterupt);
   #endif
+
   run();
+  closeProgram();
 }
