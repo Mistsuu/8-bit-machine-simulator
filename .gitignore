@@ -1,3 +1,6 @@
 *.out
 .vscode
 test
+
+run
+parser
