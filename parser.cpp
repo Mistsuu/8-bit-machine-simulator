@@ -104,7 +104,7 @@ inline void filterComment(string &codeLine) {
 }
 
 bool compile(string filename, vector<int> &RAMContent) {
-  cout << "[Debug: ] Compiling the code..." << endl;
+  cout << "[debug] Compiling the code..." << endl;
 
   /* String parser */
   stringstream ssin;  // Parse int & strings
@@ -126,7 +126,7 @@ bool compile(string filename, vector<int> &RAMContent) {
   // Open file
   codeFile.open(filename, fstream::in);
   if (!codeFile) {
-    cout << "[Error: ] No such file is found." << endl;
+    cout << "[error] No such file is found." << endl;
     return false;
   }
 
@@ -148,12 +148,12 @@ bool compile(string filename, vector<int> &RAMContent) {
     if (isTag(opcode)) { /* Idenify as a tag */
       tag = opcode.substr(0, opcode.length() - 1);
       if (variableAvailable(tag, variableList)) {
-        cout << "[Error: ] Tag conflict with another tag!" << endl;
+        cout << "[error] Tag conflict with another tag!" << endl;
         return false;
       }
 
       if (argument != "") {
-        cout << "[Error: ] Syntax Error For Tags."  << endl;
+        cout << "[error] Syntax Error For Tags."  << endl;
         return false;
       }
 
@@ -168,7 +168,7 @@ bool compile(string filename, vector<int> &RAMContent) {
   }
 
   if (tagNames.size() > 0)
-    cout << "[Debug: ] Added following tags..." << endl;
+    cout << "[debug] Added following tags..." << endl;
   for (unsigned int iName = 0; iName < tagNames.size(); ++iName) {
     cout << "    [+] " << tagNames[iName] << ": " << getBinary(variableList[tagNames[iName]], 8) << endl;
   }
@@ -202,7 +202,7 @@ bool compile(string filename, vector<int> &RAMContent) {
 
     if (isTag(opcode)) continue; // Skip tags
     else if (!isInstruction(opcode)) {
-      cout << "[Error: ] Instruction not recognized." << endl;
+      cout << "[error] Instruction not recognized." << endl;
       return false;
     }
     else RAMContent.push_back(code[opcode] << 4);
@@ -220,7 +220,7 @@ bool compile(string filename, vector<int> &RAMContent) {
       case SEI:
       case SHL:
         if (argument == "") {
-          cout << "[Error: ] Instruction Argument Required." << endl;
+          cout << "[error] Instruction Argument Required." << endl;
           return false;
         }
 
@@ -232,7 +232,7 @@ bool compile(string filename, vector<int> &RAMContent) {
 
             // Check Overflow
             if (stackReg <= RAMContent.size()) {
-              cout << "[Error: ] Memory Overflow Detected." << endl;
+              cout << "[error] Memory Overflow Detected." << endl;
               return false;
             }
 
@@ -256,7 +256,7 @@ bool compile(string filename, vector<int> &RAMContent) {
       case OUT:
       case SLF:
         if (argument != "") {
-          cout << "[Error: ] Parsed An Argument For A Command That Doesn't Need One." << endl;
+          cout << "[error] Parsed An Argument For A Command That Doesn't Need One." << endl;
           return false;
         }
         break;
@@ -271,7 +271,7 @@ bool compile(string filename, vector<int> &RAMContent) {
 
   // Notify the user about variables automatically added (if have)
   if (variableNames.size() > 0)
-    cout << "[Debug: ] Added variables: " << endl;
+    cout << "[debug] Added variables: " << endl;
   for (unsigned int iName = 0; iName < variableNames.size(); ++iName) {
     cout << "    [+] " << variableNames[iName] << ": " << getBinary(variableList[variableNames[iName]], 8) << endl;
   }
@@ -285,7 +285,7 @@ bool write(vector<int> RAMContent, string outputName) {
 
   outputFile.open(outputName, fstream::out);
   if (!outputFile) {
-    cout << "[Error: ] Cannot write to file \"" << outputName << "\". Permission Denied?" << endl;
+    cout << "[error] Cannot write to file \"" << outputName << "\". Permission Denied?" << endl;
     return false;
   }
 
@@ -310,7 +310,7 @@ int main(int argc, char *argv[]) {
   mapOPCode();
 
   if (argc <= 1) {
-    cout << "[Error: ] No Arguments Given For The Program!" << endl;
+    cout << "[error] No Arguments Given For The Program!" << endl;
     return 0;
   }
 

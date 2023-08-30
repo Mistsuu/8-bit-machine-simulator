@@ -64,12 +64,12 @@ void outputBinary(uint8_t number) {
 
 bool checkArgumentError(int argc, char* argv[]) {
   if (argc != 2) {
-    cout << "[Error: ] Exactly one argument required." << endl;
+    cout << "[error] Exactly one argument required." << endl;
     return false;
   }
 
   if (string(argv[1]).find(".out") == string::npos) {
-    cout << "[Error: ] Wrong input format file." << endl;
+    cout << "[error] Wrong input format file." << endl;
     return false;
   }
 
@@ -110,7 +110,7 @@ uint8_t extractArgument(string byteLine) {
 }
 
 bool checkData(string filename) {
-  cout << "[Debug: ] Checking validity of file..." << endl;
+  cout << "[debug] Checking validity of file..." << endl;
 
   fstream byteFile;             // open machine code file
   string  byteLine;             // line of byte code
@@ -118,19 +118,19 @@ bool checkData(string filename) {
 
   byteFile.open(filename, fstream::in);
   if (!byteFile) {
-    cout << "[Error: ] Cannot open code file!" << endl;
+    cout << "[error] Cannot open code file!" << endl;
     return false;
   }
 
   for (int i = 0; i < 256; ++i) {
     if (byteFile.eof()) {
-      cout << "[Error: ] Insufficient amount of byte code!" << endl;
+      cout << "[error] Insufficient amount of byte code!" << endl;
       return false;
     }
 
     getline(byteFile, byteLine);
     if (!checkByteLine(byteLine)) {
-      cout << "[Error: ] Wrong format for the file!" << endl;
+      cout << "[error] Wrong format for the file!" << endl;
       return false;
     }
 
@@ -159,7 +159,7 @@ bool checkData(string filename) {
     }
   }
 
-  cout << "[Debug: ] File ready to run." << endl;
+  cout << "[debug] File ready to run." << endl;
   return true;
 }
 
@@ -350,7 +350,7 @@ void initRegisters() {
 }
 
 void run() {
-  cout << "[Debug: ] Running the program..." << endl;
+  cout << "[debug] Running the program..." << endl;
   initRegisters();
 
   while (ProgramRun) {
@@ -519,5 +519,5 @@ int main(int argc, char* argv[]) {
     signal(SIGINT, checkInterupt);
     run();
   }
-  cout << endl << "[Debug: ] Program finished after " << cycleCounting << " cycles." << endl;
+  cout << endl << "[debug] Program finished after " << cycleCounting << " cycles." << endl;
 }
