@@ -9,11 +9,8 @@
   #include <windows.h>
   #include <conio.h>
 #else
-  #include <sys/select.h>
-  #include <termios.h>
-  #if HAVE_STROPTS_H
-    #include <stropts.h>
-  #endif
+  #include <ncurses.h>
+  #include <unistd.h>
 #endif
 
 using namespace std;
@@ -56,16 +53,464 @@ const uint8_t AUTO     = 1;
 const uint8_t ENTER    = 13;
 const uint8_t SPACE    = 32;
 
-////////////////////// Output info ///////////////////////////////////////
+////////////////////// Program infos ///////////////////////////////////////
 
 uint8_t RAMContent[256];     // To simulate memory of 256 bytes of codes
+int cycleCounting = 0;
 
-void outputBinary(uint8_t number) {
-  for (int i = 7; i >= 0; --i) {
-    cout << (((number >> i) & 0x1) ? "1" : "0");
+////////////////////// Screen handling ///////////////////////////////
+// To let console know if we need to wipe the screen
+#ifdef(_WIN32)
+  uint8_t OutputMode    = SIGNED;
+  uint8_t DebugMode     = MANUAL;
+  bool    startDisplay  = true;  
+  COORD   cursorPos;
+
+  inline void resetCursor() {
+    SetConsoleCursorPosition(
+      GetStdHandle(STD_OUTPUT_HANDLE),
+      cursorPos
+    );
+  }
+
+  inline bool writeBlank() {
+    // Get screen size
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    COORD screenSize;
+    if (!GetConsoleScreenBufferInfo(
+          GetStdHandle( STD_OUTPUT_HANDLE ),
+          &csbi
+      ))
+      return false;
+    screenSize = csbi.dwSize;
+
+    // Write ' ' to the next 5 lines
+    string screenBuf = "";
+    for (int y = 0; y < 5; ++y) {
+      for (int x = 0; x < screenSize.X; ++x) {
+        screenBuf += " ";
+      }
+      screenBuf += "\n";
+    }
+    cout << screenBuf;
+    return true;
+  }
+
+  void clearOutput() {
+    resetCursor();
+    writeBlank();
+  //  resetCursor();
+  }
+
+  bool getStartLocation()
+  {
+    #ifdef(_WIN32)
+      CONSOLE_SCREEN_BUFFER_INFO csbi;
+      if (!GetConsoleScreenBufferInfo(
+            GetStdHandle( STD_OUTPUT_HANDLE ),
+            &csbi
+          ))
+        return false;
+
+      cursorPos = csbi.dwCursorPosition;
+      return true;
+    #endif
+  }
+
+  void outputBinary(uint8_t number) {
+    for (int i = 7; i >= 0; --i) {
+      cout << (((number >> i) & 0x1) ? "1" : "0");
+    }
+  }
+
+  inline void displayInfo() {
+    cout << "[] Mem Register   : "; outputBinary(MemRegister);    cout << "   " << "[] Ram Content : "; outputBinary(RAMContent[MemRegister]); cout << endl;
+    cout << "[] A   Register   : "; outputBinary(ARegister);      cout << "   " << "[] B   Register: "; outputBinary(BRegister);               cout << endl;
+    cout << "[] Sum Register   : "; outputBinary(SumRegister);    cout << "   " << "(ZF: " << unsigned(ZeroFlag) << ", CF: " << unsigned(CarryFlag) << ")" << endl;
+    cout << "[] Program Counter: "; outputBinary(ProgramCounter); cout << "   " << "[] Instruction : "; outputBinary(Instruction); cout << "(";
+    switch(Instruction) {
+      case LDA:
+        cout << "LDA";
+        break;
+      case ADD:
+        cout << "ADD";
+        break;
+      case SUB:
+        cout << "SUB";
+        break;
+      case STA:
+        cout << "STA";
+        break;
+      case LDI:
+        cout << "LDI";
+        break;
+      case JMP:
+        cout << "JMP";
+        break;
+      case JC:
+        cout << "JC";
+        break;
+      case JZ:
+        cout << "JZ";
+        break;
+      case AEI:
+        cout << "AEI";
+        break;
+      case SEI:
+        cout << "SEI";
+        break;
+      case SHL:
+        cout << "SHL";
+        break;
+      case HLT:
+        cout << "HLT";
+        break;
+      case _OUT:
+        cout << "OUT";
+        break;
+      case SLF:
+        cout << "SLF";
+        break;
+      case NOP:
+        cout << "NOP";
+        break;
+      default:
+        cout << "Not recognized";
+        ProgramRun = 0;
+        break;
+    }
+    cout << ") " << endl;
+    cout << ">>> Output: [[";
+    if (OutputMode == SIGNED)
+      cout << signed(OutRegister);
+    else
+      cout << unsigned(OutRegister);
+    cout << "]]  ";
+  }
+
+  bool controlDisplay() {
+    if (DebugMode == MANUAL) {
+      #ifdef(_WIN32)
+        FlushConsoleInputBuffer(GetStdHandle(STD_INPUT_HANDLE));
+      #endif
+
+      while (!_kbhit())
+        if (ProgramRun == 0) 
+          return false;
+
+      char ch = _getch();
+      if (ch == ' ')
+        return true;
+      else if (ch == ENTER)
+        DebugMode = AUTO;
+      else
+        return controlDisplay();
+    }
+
+    if (DebugMode == AUTO) {
+      Sleep(1000 / CLK_SPEED);
+    }
+    
+    return true;
+  }
+
+  bool updateDisplay() {
+    cycleCounting++;
+    if (startDisplay) {
+      getStartLocation();
+      startDisplay = false;
+    }
+    else {
+      clearOutput();
+    }
+
+    displayInfo();
+    if (!controlDisplay()) 
+      return false;
+
+    return true;
+  }
+#else
+  void outputBinary(uint8_t number) {
+    for (int i = 7; i >= 0; --i) {
+      cout << (((number >> i) & 0x1) ? "1" : "0");
+    }
+  }
+
+  inline void displayInfo() {
+    cout << "[] Mem Register   : "; outputBinary(MemRegister);    cout << "   " << "[] Ram Content : "; outputBinary(RAMContent[MemRegister]); cout << endl;
+    cout << "[] A   Register   : "; outputBinary(ARegister);      cout << "   " << "[] B   Register: "; outputBinary(BRegister);               cout << endl;
+    cout << "[] Sum Register   : "; outputBinary(SumRegister);    cout << "   " << "(ZF: " << unsigned(ZeroFlag) << ", CF: " << unsigned(CarryFlag) << ")" << endl;
+    cout << "[] Program Counter: "; outputBinary(ProgramCounter); cout << "   " << "[] Instruction : "; outputBinary(Instruction); cout << "(";
+    switch(Instruction) {
+      case LDA:
+        cout << "LDA";
+        break;
+      case ADD:
+        cout << "ADD";
+        break;
+      case SUB:
+        cout << "SUB";
+        break;
+      case STA:
+        cout << "STA";
+        break;
+      case LDI:
+        cout << "LDI";
+        break;
+      case JMP:
+        cout << "JMP";
+        break;
+      case JC:
+        cout << "JC";
+        break;
+      case JZ:
+        cout << "JZ";
+        break;
+      case AEI:
+        cout << "AEI";
+        break;
+      case SEI:
+        cout << "SEI";
+        break;
+      case SHL:
+        cout << "SHL";
+        break;
+      case HLT:
+        cout << "HLT";
+        break;
+      case _OUT:
+        cout << "OUT";
+        break;
+      case SLF:
+        cout << "SLF";
+        break;
+      case NOP:
+        cout << "NOP";
+        break;
+      default:
+        cout << "Not recognized";
+        ProgramRun = 0;
+        break;
+    }
+    cout << ") " << endl;
+    cout << ">>> Output: [[";
+    if (OutputMode == SIGNED)
+      cout << signed(OutRegister);
+    else
+      cout << unsigned(OutRegister);
+    cout << "]]  ";
+  }
+
+  bool updateDisplay() {
+    clearOutput();
+    displayInfo();
+    if (!controlDisplay()) 
+      return false;
+
+    return true;
+  }
+#endif
+
+////////////////////// Main loop ///////////////////////////////////
+
+uint8_t performArithmetic(uint8_t A, uint8_t B, uint8_t &ZeroFlag, uint8_t &CarryFlag, bool SUB_FLAG, bool FLAG_IN) {
+  uint16_t A_16   = A & 0b11111111;
+  uint16_t B_16   = B & 0b11111111;
+  uint16_t result_16;
+  if (SUB_FLAG)
+    result_16 = A_16 + (~B_16 & 0b11111111) + 1;
+  else
+    result_16 = A_16 + B_16;
+
+  if (FLAG_IN) {
+    CarryFlag = (result_16 >> 8) & 0x1;
+    ZeroFlag  = ((result_16 & 0b11111111) == 0);
+  }
+
+  uint8_t result_8 = result_16 & 0b11111111;
+  return result_8;
+}
+
+void initRegisters() {
+  MemRegister    = 0;
+  ARegister      = 0;
+  BRegister      = 0;
+  SumRegister    = 0;
+  Instruction    = 0;
+  ProgramCounter = 0;
+  OutRegister    = 0;
+  ZeroFlag       = 0;
+  CarryFlag      = 0;
+  ProgramRun     = 1;
+}
+
+bool updateProgram() {
+  cycleCounting++;
+  return updateDisplay();
+}
+
+void run() {
+  initRegisters();
+
+  while (ProgramRun) {
+    if (!updateProgram()) return;
+
+    // Fetch Instruction
+    MemRegister = ProgramCounter++;
+    Instruction = RAMContent[MemRegister];
+    if (!updateProgram()) return;
+
+    // Get argument
+    switch(Instruction) {
+      case LDA:
+      case ADD:
+      case SUB:
+      case STA:
+      case LDI:
+      case JMP:
+      case JC:
+      case JZ:
+      case AEI:
+      case SEI:
+      case SHL:
+        MemRegister = ProgramCounter++;
+        if (!updateProgram()) return;
+        break;
+    }
+
+    // Handling instructions
+    switch(Instruction) {
+      case LDA:
+        MemRegister = RAMContent[MemRegister];
+        if (!updateProgram()) return;
+
+        ARegister = RAMContent[MemRegister];
+        SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, false);
+        if (!updateProgram()) return;
+        break;
+
+      case ADD:
+        MemRegister = RAMContent[MemRegister];
+        if (!updateProgram()) return;
+
+        BRegister = RAMContent[MemRegister];
+        SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, true);
+        if (!updateProgram()) return;
+
+        ARegister = SumRegister;
+        SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, false);
+        if (!updateProgram()) return;
+        break;
+
+      case SUB:
+        MemRegister = RAMContent[MemRegister];
+        if (!updateProgram()) return;
+
+        BRegister = RAMContent[MemRegister];
+      	SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, true, true);
+      	if (!updateProgram()) return;
+
+      	ARegister = SumRegister;
+      	SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, false);
+        if (!updateProgram()) return;
+      	break;
+
+      case STA:
+        MemRegister = RAMContent[MemRegister];
+        if (!updateProgram()) return;
+
+      	RAMContent[MemRegister] = ARegister;
+      	if (!updateProgram()) return;
+      	break;
+
+      case LDI:
+        ARegister = RAMContent[MemRegister];
+        SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, false);
+        if (!updateProgram()) return;
+        break;
+
+      case JC:
+        if (CarryFlag == 0) 
+          break;
+
+        ProgramCounter = RAMContent[MemRegister];
+        if (!updateProgram()) return;
+        break;
+
+      case JZ:
+        if (ZeroFlag == 0) 
+          break;
+
+        ProgramCounter = RAMContent[MemRegister];
+        if (!updateProgram()) return;
+        break;
+
+      case JMP:
+        ProgramCounter = RAMContent[MemRegister];
+        if (!updateProgram()) return;
+        break;
+
+      case AEI:
+        BRegister = RAMContent[MemRegister];
+        SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, true);
+        if (!updateProgram()) return;
+
+        ARegister = SumRegister;
+        SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, false);
+        if (!updateProgram()) return;
+        break;
+
+      case SEI:
+        BRegister = RAMContent[MemRegister];
+      	SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, true, true);
+      	if (!updateProgram()) return;
+
+      	ARegister = SumRegister;
+      	SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, false);
+        if (!updateProgram()) return;
+      	break;
+
+      case SHL:
+        MemRegister = RAMContent[MemRegister];
+        if (!updateProgram()) return;
+
+        ARegister = BRegister = RAMContent[MemRegister];
+        SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, true);
+        if (!updateProgram()) return;
+
+        ARegister = SumRegister;
+        SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, false);
+        if (!updateProgram()) return;
+        break;
+
+      case HLT:
+        ProgramRun = 0;
+        break;
+
+      case _OUT:
+        OutRegister = ARegister;
+        if (!updateProgram()) return;
+        break;
+
+      case SLF:
+        BRegister = ARegister;
+        SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, true);
+        if (!updateProgram()) return;
+
+        ARegister = SumRegister;
+        SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, false);
+        if (!updateProgram()) return;
+        break;
+
+      case NOP:
+      default:
+        break;
+    }
   }
 }
 
+////////////////////// Initialize /////////////////////////////
 bool checkArgumentError(int argc, char* argv[]) {
   if (argc != 2) {
     cout << "[error] Exactly one argument required." << endl;
@@ -83,7 +528,8 @@ bool checkArgumentError(int argc, char* argv[]) {
 // A function to keep the rule of byte code file
 bool checkByteLine(string &byteLine) {
   // A line should have the length of 19
-  if (byteLine.length() != 19) return false;
+  if (byteLine.length() != 19) 
+    return false;
 
   // 8 first & last characters are binary code, seperated by a " | "
   for (unsigned int i = 0; i < byteLine.length(); ++i) {
@@ -96,12 +542,12 @@ bool checkByteLine(string &byteLine) {
   return true;
 }
 
-// A function to keep the rule of op code
+// A function to keep the rule of OPCodes
 uint8_t extractOPCode(string byteLine) {
   uint8_t opcode = 0;
-  for (int i = 0; i < 4; ++i) {
-    if (byteLine[i] == '1') opcode |= (1 << (3 - i));
-  }
+  for (int i = 0; i < 4; ++i)
+    if (byteLine[i] == '1') 
+      opcode |= (1 << (3 - i));
   return opcode;
 }
 
@@ -167,438 +613,18 @@ bool checkData(string filename) {
   return true;
 }
 
-////////////////////// _getch(), _kbhit() on Linux ///////////////////
+bool initScreen() {
+  initscr();
 
-static struct termios old, current;
+  cbreak();
+  noecho();
+  nodelay(stdscr, TRUE);
 
-/* Initialize new terminal i/o settings */
-void initTermios(int echo) 
-{
-  tcgetattr(0, &old); /* grab old terminal i/o settings */
-  current = old; /* make new settings same as old settings */
-  current.c_lflag &= ~ICANON; /* disable buffered i/o */
-  if (echo) {
-    current.c_lflag |= ECHO; /* set echo mode */
-  } else {
-    current.c_lflag &= ~ECHO; /* set no echo mode */
-  }
-  tcsetattr(0, TCSANOW, &current); /* use these new terminal i/o settings now */
-}
-
-/* Restore old terminal i/o settings */
-void resetTermios(void) 
-{
-  tcsetattr(0, TCSANOW, &old);
-}
-
-/* Read 1 character - echo defines echo mode */
-char getch(int echo) 
-{
-  char ch;
-  initTermios(echo);
-  ch = getchar();
-  resetTermios();
-  return ch;
-}
-
-/* Read 1 character without echo */
-char _getch(void) 
-{
-  return getch(0);
-}
-
-/* Read 1 character with echo */
-char _getche(void) 
-{
-  return getch(1);
-}
-
-int _kbhit() {
-  static const int STDIN = 0;
-  static bool initialized = false;
-
-  if (! initialized) {
-    // Use termios to turn off line buffering
-    termios term;
-    tcgetattr(STDIN, &term);
-    term.c_lflag &= ~ICANON;
-    tcsetattr(STDIN, TCSANOW, &term);
-    setbuf(stdin, NULL);
-    initialized = true;
-  }
-
-  int bytesWaiting;
-  ioctl(STDIN, FIONREAD, &bytesWaiting);
-  return bytesWaiting;
-}
-
-////////////////////// Screen handling ///////////////////////////////
-uint8_t OutputMode    = SIGNED;
-uint8_t DebugMode     = MANUAL;
-int     cycleCounting = 0;
-bool    startDisplay  = true;    // To let console know if we need to wipe the screen
-#ifdef(_WIN32)
-  COORD cursorPos;
-#endif
-
-inline void resetCursor() {
-  #ifdef(_WIN32)
-    SetConsoleCursorPosition(
-      GetStdHandle(STD_OUTPUT_HANDLE),
-      cursorPos
-    );
-  #endif
-}
-
-inline bool writeBlank() {
-  #ifdef(_WIN32)
-    // Get screen size
-    CONSOLE_SCREEN_BUFFER_INFO csbi;
-    COORD screenSize;
-    if (!GetConsoleScreenBufferInfo(
-          GetStdHandle( STD_OUTPUT_HANDLE ),
-          &csbi
-      ))
-      return false;
-    screenSize = csbi.dwSize;
-
-    // Write ' ' to the next 5 lines
-    string screenBuf = "";
-    for (int y = 0; y < 5; ++y) {
-      for (int x = 0; x < screenSize.X; ++x) {
-        screenBuf += " ";
-      }
-      screenBuf += "\n";
-    }
-    cout << screenBuf;
-    return true;
-  #endif
-}
-
-void clearOutput() {
-  resetCursor();
-  writeBlank();
-//  resetCursor();
-}
-
-bool getStartLocation()
-{
-  #ifdef(_WIN32)
-    CONSOLE_SCREEN_BUFFER_INFO csbi;
-    if (!GetConsoleScreenBufferInfo(
-          GetStdHandle( STD_OUTPUT_HANDLE ),
-          &csbi
-          ))
-      return false;
-
-    cursorPos = csbi.dwCursorPosition;
-    return true;
-  #endif
-}
-
-inline void displayInfo() {
-  cout << "[] Mem Register   : "; outputBinary(MemRegister);    cout << "   " << "[] Ram Content : "; outputBinary(RAMContent[MemRegister]); cout << endl;
-  cout << "[] A   Register   : "; outputBinary(ARegister);      cout << "   " << "[] B   Register: "; outputBinary(BRegister);               cout << endl;
-  cout << "[] Sum Register   : "; outputBinary(SumRegister);    cout << "   " << "(ZF: " << unsigned(ZeroFlag) << ", CF: " << unsigned(CarryFlag) << ")" << endl;
-  cout << "[] Program Counter: "; outputBinary(ProgramCounter); cout << "   " << "[] Instruction : "; outputBinary(Instruction); cout << "(";
-  switch(Instruction) {
-    case LDA:
-      cout << "LDA";
-      break;
-    case ADD:
-      cout << "ADD";
-      break;
-    case SUB:
-      cout << "SUB";
-      break;
-    case STA:
-      cout << "STA";
-      break;
-    case LDI:
-      cout << "LDI";
-      break;
-    case JMP:
-      cout << "JMP";
-      break;
-    case JC:
-      cout << "JC";
-      break;
-    case JZ:
-      cout << "JZ";
-      break;
-    case AEI:
-      cout << "AEI";
-      break;
-    case SEI:
-      cout << "SEI";
-      break;
-    case SHL:
-      cout << "SHL";
-      break;
-    case HLT:
-      cout << "HLT";
-      break;
-    case _OUT:
-      cout << "OUT";
-      break;
-    case SLF:
-      cout << "SLF";
-      break;
-    case NOP:
-      cout << "NOP";
-      break;
-    default:
-      cout << "Not recognized";
-      ProgramRun = 0;
-      break;
-  }
-  cout << ") " << endl;
-  cout << ">>> Output: [[";
-  if (OutputMode == SIGNED)
-     cout << signed(OutRegister);
-  else
-     cout << unsigned(OutRegister);
-  cout << "]]  ";
-}
-
-bool controlDisplay() {
-  if (DebugMode == MANUAL) {
-    #ifdef(_WIN32)
-      FlushConsoleInputBuffer(GetStdHandle(STD_INPUT_HANDLE));
-    #endif
-
-    while (!_kbhit())
-      if (ProgramRun == 0) 
-        return false;
-
-    char ch = _getch();
-    if (ch == ' ')
-      return true;
-    else if (ch == ENTER)
-      DebugMode = AUTO;
-    else
-      return controlDisplay();
-  }
-
-  if (DebugMode == AUTO) {
-    Sleep(1000 / CLK_SPEED);
-  }
-  
+  scrollok(stdscr, TRUE);
   return true;
 }
 
-bool updateDisplay() {
-  cycleCounting++;
-  if (startDisplay) {
-    getStartLocation();
-    startDisplay = false;
-  }
-  else {
-    clearOutput();
-  }
-
-  displayInfo();
-  if (!controlDisplay()) 
-    return false;
-
-  return true;
-}
-
-////////////////////// Main loop ///////////////////////////////////
-
-uint8_t performArithmetic(uint8_t A, uint8_t B, uint8_t &ZeroFlag, uint8_t &CarryFlag, bool SUB_FLAG, bool FLAG_IN) {
-  uint16_t A_16   = A & 0b11111111;
-  uint16_t B_16   = B & 0b11111111;
-  uint16_t result_16;
-  if (SUB_FLAG)
-    result_16 = A_16 + (~B_16 & 0b11111111) + 1;
-  else
-    result_16 = A_16 + B_16;
-
-  if (FLAG_IN) {
-    CarryFlag = (result_16 >> 8) & 0x1;
-    ZeroFlag  = ((result_16 & 0b11111111) == 0);
-  }
-
-  uint8_t result_8 = result_16 & 0b11111111;
-  return result_8;
-}
-
-void initRegisters() {
-  MemRegister    = 0;
-  ARegister      = 0;
-  BRegister      = 0;
-  SumRegister    = 0;
-  Instruction    = 0;
-  ProgramCounter = 0;
-  OutRegister    = 0;
-  ZeroFlag       = 0;
-  CarryFlag      = 0;
-  ProgramRun     = 1;
-}
-
-void run() {
-  cout << "[debug] Running the program..." << endl;
-  initRegisters();
-
-  while (ProgramRun) {
-    if (!updateDisplay()) return;
-
-    // Fetch Instruction
-    MemRegister = ProgramCounter++;
-    Instruction = RAMContent[MemRegister];
-    if (!updateDisplay()) return;
-
-    // Get argument
-    switch(Instruction) {
-      case LDA:
-      case ADD:
-      case SUB:
-      case STA:
-      case LDI:
-      case JMP:
-      case JC:
-      case JZ:
-      case AEI:
-      case SEI:
-      case SHL:
-        MemRegister = ProgramCounter++;
-        if (!updateDisplay()) return;
-        break;
-    }
-
-    // Handling instructions
-    switch(Instruction) {
-      case LDA:
-        MemRegister = RAMContent[MemRegister];
-        if (!updateDisplay()) return;
-
-        ARegister = RAMContent[MemRegister];
-        SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, false);
-        if (!updateDisplay()) return;
-        break;
-
-      case ADD:
-        MemRegister = RAMContent[MemRegister];
-        if (!updateDisplay()) return;
-
-        BRegister = RAMContent[MemRegister];
-        SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, true);
-        if (!updateDisplay()) return;
-
-        ARegister = SumRegister;
-        SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, false);
-        if (!updateDisplay()) return;
-        break;
-
-      case SUB:
-        MemRegister = RAMContent[MemRegister];
-        if (!updateDisplay()) return;
-
-        BRegister = RAMContent[MemRegister];
-      	SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, true, true);
-      	if (!updateDisplay()) return;
-
-      	ARegister = SumRegister;
-      	SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, false);
-        if (!updateDisplay()) return;
-      	break;
-
-      case STA:
-        MemRegister = RAMContent[MemRegister];
-        if (!updateDisplay()) return;
-
-      	RAMContent[MemRegister] = ARegister;
-      	if (!updateDisplay()) return;
-      	break;
-
-      case LDI:
-        ARegister = RAMContent[MemRegister];
-        SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, false);
-        if (!updateDisplay()) return;
-        break;
-
-      case JC:
-        if (CarryFlag == 0) 
-          break;
-
-        ProgramCounter = RAMContent[MemRegister];
-        if (!updateDisplay()) return;
-        break;
-
-      case JZ:
-        if (ZeroFlag == 0) 
-          break;
-
-        ProgramCounter = RAMContent[MemRegister];
-        if (!updateDisplay()) return;
-        break;
-
-      case JMP:
-        ProgramCounter = RAMContent[MemRegister];
-        if (!updateDisplay()) return;
-        break;
-
-      case AEI:
-        BRegister = RAMContent[MemRegister];
-        SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, true);
-        if (!updateDisplay()) return;
-
-        ARegister = SumRegister;
-        SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, false);
-        if (!updateDisplay()) return;
-        break;
-
-      case SEI:
-        BRegister = RAMContent[MemRegister];
-      	SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, true, true);
-      	if (!updateDisplay()) return;
-
-      	ARegister = SumRegister;
-      	SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, false);
-        if (!updateDisplay()) return;
-      	break;
-
-      case SHL:
-        MemRegister = RAMContent[MemRegister];
-        if (!updateDisplay()) return;
-
-        ARegister = BRegister = RAMContent[MemRegister];
-        SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, true);
-        if (!updateDisplay()) return;
-
-        ARegister = SumRegister;
-        SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, false);
-        if (!updateDisplay()) return;
-        break;
-
-      case HLT:
-        ProgramRun = 0;
-        break;
-
-      case _OUT:
-        OutRegister = ARegister;
-        if (!updateDisplay()) return;
-        break;
-
-      case SLF:
-        BRegister = ARegister;
-        SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, true);
-        if (!updateDisplay()) return;
-
-        ARegister = SumRegister;
-        SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, false);
-        if (!updateDisplay()) return;
-        break;
-
-      case NOP:
-      default:
-        break;
-    }
-  }
-}
-
-////////////////////// Initialize ///////////////////////////////////
+////////////////////// Main ///////////////////////////////////
 
 void checkInterupt(int signal) {
   // Stops the program.
@@ -609,10 +635,14 @@ int main(int argc, char* argv[]) {
   if (!checkArgumentError(argc, argv)) 
     return -1;
   
-  if (checkData(string(argv[1]))) {
-    signal(SIGINT, checkInterupt);
-    run();
-  }
+  if (!checkData(string(argv[1])))
+    return -2;
+
+  if (!initScreen())
+    return -3;
+    
+  signal(SIGINT, checkInterupt);
+  run();
 
   cout << endl << "[debug] Program finished after " << cycleCounting << " cycles." << endl;
 }
