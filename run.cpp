@@ -243,6 +243,12 @@ int cycleCounting = 0;
   uint8_t DebugMode    = MANUAL;
   bool    startDisplay = true;
 
+  #define safe_printw(...)      \
+  do {                        \
+    if (ProgramRun)           \
+      printw(__VA_ARGS__);    \
+  } while(0)                
+
   void clearOutput() {
     move(7, 0);
     clrtoeol();
@@ -258,13 +264,13 @@ int cycleCounting = 0;
   }
 
   void printInstruction() {
-    printw("==============================================================\n");
-    printw("    Press SPACE to single step the code.                      \n");
-    printw("    Press ENTER to automatically run the code (%d Hz).        \n", CLK_SPEED);
-    printw("    Press CTRL-C to exit the program.                         \n");
-    printw("    (NOTE: if you press ENTER there's no going back.)         \n");
-    printw("==============================================================\n");
-    printw("\n");
+    safe_printw("==============================================================\n");
+    safe_printw("    Press SPACE to single step the code.                      \n");
+    safe_printw("    Press ENTER to automatically run the code (%d Hz).        \n", CLK_SPEED);
+    safe_printw("    Press CTRL-C to exit the program.                         \n");
+    safe_printw("    (NOTE: if you press ENTER there's no going back.)         \n");
+    safe_printw("==============================================================\n");
+    safe_printw("\n");
   }
 
   bool controlDisplay() {
@@ -293,76 +299,76 @@ int cycleCounting = 0;
 
   void outputBinary(uint8_t number) {
     for (int i = 7; i >= 0; --i)
-      printw(((number >> i) & 0x1) ? "1" : "0");
+      safe_printw(((number >> i) & 0x1) ? "1" : "0");
   }
 
   inline void displayInfo() {
-    printw("[] Mem Register   : "); outputBinary(MemRegister);    printw("   "); printw("[] Ram Content : "); outputBinary(RAMContent[MemRegister]);                              printw("\n");
-    printw("[] A   Register   : "); outputBinary(ARegister);      printw("   "); printw("[] B   Register: "); outputBinary(BRegister);                                            printw("\n");
-    printw("[] Sum Register   : "); outputBinary(SumRegister);    printw("   "); printw("(ZF: "); printw("%u", ZeroFlag); printw(", CF: "); printw("%u", CarryFlag); printw(")"); printw("\n");
-    printw("[] Program Counter: "); outputBinary(ProgramCounter); printw("   "); printw("[] Instruction : "); outputBinary(Instruction); 
+    safe_printw("[] Mem Register   : "); outputBinary(MemRegister);    safe_printw("   "); safe_printw("[] Ram Content : "); outputBinary(RAMContent[MemRegister]);                              safe_printw("\n");
+    safe_printw("[] A   Register   : "); outputBinary(ARegister);      safe_printw("   "); safe_printw("[] B   Register: "); outputBinary(BRegister);                                            safe_printw("\n");
+    safe_printw("[] Sum Register   : "); outputBinary(SumRegister);    safe_printw("   "); safe_printw("(ZF: "); safe_printw("%u", ZeroFlag); safe_printw(", CF: "); safe_printw("%u", CarryFlag); safe_printw(")"); safe_printw("\n");
+    safe_printw("[] Program Counter: "); outputBinary(ProgramCounter); safe_printw("   "); safe_printw("[] Instruction : "); outputBinary(Instruction); 
     
-    printw("(");
+    safe_printw("(");
     switch(Instruction) {
       case LDA:
-        printw("LDA");
+        safe_printw("LDA");
         break;
       case ADD:
-        printw("ADD");
+        safe_printw("ADD");
         break;
       case SUB:
-        printw("SUB");
+        safe_printw("SUB");
         break;
       case STA:
-        printw("STA");
+        safe_printw("STA");
         break;
       case LDI:
-        printw("LDI");
+        safe_printw("LDI");
         break;
       case JMP:
-        printw("JMP");
+        safe_printw("JMP");
         break;
       case JC:
-        printw("JC");
+        safe_printw("JC");
         break;
       case JZ:
-        printw("JZ");
+        safe_printw("JZ");
         break;
       case AEI:
-        printw("AEI");
+        safe_printw("AEI");
         break;
       case SEI:
-        printw("SEI");
+        safe_printw("SEI");
         break;
       case SHL:
-        printw("SHL");
+        safe_printw("SHL");
         break;
       case HLT:
-        printw("HLT");
+        safe_printw("HLT");
         break;
       case _OUT:
-        printw("OUT");
+        safe_printw("OUT");
         break;
       case SLF:
-        printw("SLF");
+        safe_printw("SLF");
         break;
       case NOP:
-        printw("NOP");
+        safe_printw("NOP");
         break;
       default:
-        printw("Not recognized");
+        safe_printw("Not recognized");
         ProgramRun = 0;
         break;
     }
-    printw(")\n");
+    safe_printw(")\n");
 
-    printw("\n");
-    printw(">>> Output: [[");
+    safe_printw("\n");
+    safe_printw(">>> Output: [[");
     if (OutputMode == SIGNED)
-      printw("%d", OutRegister);
+      safe_printw("%d", OutRegister);
     else
-      printw("%u", OutRegister);
-    printw("]]  ");
+      safe_printw("%u", OutRegister);
+    safe_printw("]]  ");
   }
 
   bool updateDisplay() {
@@ -698,6 +704,15 @@ bool initScreen() {
 void checkInterupt(int signal) {
   // Stops the program.
   ProgramRun = 0;
+  #if defined(WIN32) && !defined(__unix__)
+    cout << endl;
+  #elif defined(__unix__) && !defined(WIN32)
+    clear();
+    refresh();
+    sleep(1);
+    endwin();
+    sleep(1);
+  #endif
 }
 
 int main(int argc, char* argv[]) {
@@ -710,8 +725,8 @@ int main(int argc, char* argv[]) {
   if (!initScreen())
     return -3;
     
-  // signal(SIGINT, checkInterupt);
+  signal(SIGINT, checkInterupt);
   run();
 
-  cout << endl << "[debug] Program finished after " << cycleCounting << " cycles." << endl;
+  cout << "[debug] Program finished after " << cycleCounting << " cycles." << endl;
 }
