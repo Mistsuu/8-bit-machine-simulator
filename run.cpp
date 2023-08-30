@@ -194,12 +194,12 @@ int cycleCounting = 0;
   }
 
   void printInstruction() {
-    cout << "========================================================" << endl;
-    cout << "    Press SPACE to single step the code."                 << endl;
-    cout << "    Press ENTER to automatically run the code."           << endl;
-    cout << "    Press CTRL-C to exit the program."                    << endl;
-    cout << "    (NOTE: if you press ENTER there's no going back.)"    << endl;
-    cout << "========================================================" << endl;
+    cout << "========================================================"                << endl;
+    cout << "    Press SPACE to single step the code."                                << endl;
+    cout << "    Press ENTER to automatically run the code. (" << CLK_SPEED << "Hz)." << endl;
+    cout << "    Press CTRL-C to exit the program."                                   << endl;
+    cout << "    (NOTE: if you press ENTER there's no going back.)"                   << endl;
+    cout << "========================================================"                << endl;
   }
 
   bool controlDisplay() {
@@ -260,7 +260,7 @@ int cycleCounting = 0;
   void printInstruction() {
     printw("==============================================================\n");
     printw("    Press SPACE to single step the code.                      \n");
-    printw("    Press ENTER to automatically run the code.                \n");
+    printw("    Press ENTER to automatically run the code (%d Hz).        \n", CLK_SPEED);
     printw("    Press CTRL-C to exit the program.                         \n");
     printw("    (NOTE: if you press ENTER there's no going back.)         \n");
     printw("==============================================================\n");
