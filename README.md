@@ -50,6 +50,7 @@ Here is the output image:
 ## Internals
 
 ### List of ASM instructions
+
 | opcode        | argument                                                     | usage                                                        |
 | ------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | `NOP`         | *None*                                                       | Do nothing. Waste machine clock cycles for fun :)            |
