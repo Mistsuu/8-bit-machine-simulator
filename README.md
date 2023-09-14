@@ -49,7 +49,7 @@ Here is the output image:
 
 ## Internals
 
-### List of ASM instructions
+### Instruction set
 
 | opcode        | argument                                                     | usage                                                        |
 | ------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
