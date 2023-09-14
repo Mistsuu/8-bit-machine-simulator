@@ -10,7 +10,7 @@ LDI 2
 STA x       # Load 2 to <x>
 
 LDI 127
-STA y       # Load 129 to <y>
+STA y       # Load 127 to <y>
 
 LDI 0
 STA result  # Load 0 to <result>

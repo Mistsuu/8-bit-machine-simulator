@@ -2,7 +2,9 @@
 Based on the architecture of [Ben Eater's 8-bit computer](https://www.youtube.com/watch?v=HyznrdDSSGM), and come up with my own code word.
 *(Pss.. If you have not check [his playlist on 8-bit computer](https://www.youtube.com/playlist?list=PLowKtXNTBypGqImE405J2565dvjafglHU), please check them!! It is really, really, reallyy well-explained!!)*
 
-<img src="img/ben-eater-machine" alt="Ben Eater's Project" style="zoom:50%;" />
+<p align="center">
+    <img src="img/ben-eater-machine" alt="Ben Eater's Project" style="zoom:50%;" />
+</p>
 
 ## Files
 
@@ -37,4 +39,9 @@ You can find the files ending with `.su` *(Mist**"su"**u, surpriseee)* in the `e
 
 Here is the output image:
 
-![](img/run-run)
+<p align="center">
+    <img src="img/run-run"/>
+    <p align="center">
+        <i>Not really user-friendly tho...</i>
+    </p>
+</p>
