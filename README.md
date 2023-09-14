@@ -45,3 +45,26 @@ Here is the output image:
         <i>Not really user-friendly tho...</i>
     </p>
 </p>
+
+
+## Internals
+
+### List of ASM instructions
+| opcode        | argument                                                     | usage                                                        |
+| ------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| `NOP`         | *None*                                                       | Do nothing. Waste machine clock cycles for fun :)            |
+| `HLT`         | *None*                                                       | Stops the program.                                           |
+| `OUT`         | *None*                                                       | Loads the content of `A register` to a display.              |
+| `LDA <var>`   | `var`: Any variable name represented as ASCII string.        | Load values from address pointed by `var` to `A register`.   |
+| `ADD <var>`   | `var`: Any variable name represented as ASCII string.        | Load values from address pointed by `var` to `B register`.<br />The machine attempts to calculate the value of `SUM register`, based on sum of the already existed value in `A register` and one in `B register`.<br />The value of `A register` is then overwritten by  `SUM register`.<br />The carry flag (`CF`) *and/or* the zero flag (`ZF`) is set accordingly based on the sumation. |
+| `SUB <var>`   | `var`: Any variable name represented as ASCII string.        | Same as `ADD` but for subtraction.                           |
+| `STA <var>`   | `var`: Any variable name represented as ASCII string.        | Writes the values from `A register` to the address pointed by `var`. |
+| `LDI <i8>`    | `i8`: An 8-bit unsigned integer value.                       | Writes value `i8` to `A register`.                           |
+| `JMP <label>` | `label`: Any label in the program represented as ASCII string. | Set the program counter to the address pointed by `label`.   |
+| `JC <label>`  | `label`: Any label in the program represented as ASCII string. | Same as `JMP` but only jumps when the carry flag (`CF`) is set. |
+| `JZ <label>`  | `label`: Any label in the program represented as ASCII string. | Same as `JMP` but only jumps when the zero flag (`ZF`) is set. |
+| `AEI <i8>`    | `i8`: An 8-bit unsigned integer value.                       | Same as `ADD` but instead of loading the content from a specific address in memory to `B register`, we load the immidiate value `i8`. |
+| `SEI <i8>`    | `i8`: An 8-bit unsigned integer value.                       | Same as `AEI` but for subtraction.                           |
+| `SHL <var>`   | `var`: Any variable name represented as ASCII string.        | Calculates `A register` **:=** content of address pointed by `var` *** 2**. |
+| `SLF`         | *None*                                                       | Calculates `A register` **:=** `A register` *** 2.**         |
+
