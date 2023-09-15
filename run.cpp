@@ -469,11 +469,30 @@ void run() {
     // Fetch Instruction
     MemRegister = ProgramCounter++;
     Instruction = RAMContent[MemRegister];
-    Argument    = "";
+
+    // Get arguments but for humans
+    switch(Instruction) {
+      case LDA:
+      case ADD:
+      case SUB:
+      case STA:
+      case LDI:
+      case JMP:
+      case JC:
+      case JZ:
+      case AEI:
+      case SEI:
+      case SHL:
+        Argument = to_string(RAMContent[ProgramCounter]);
+        break;
+      default:
+        Argument = "";
+    }
+
     if (!updateMachine())
       return;
 
-    // Get argument
+    // Get arguments but for machine
     switch(Instruction) {
       case LDA:
       case ADD:
@@ -487,7 +506,6 @@ void run() {
       case SEI:
       case SHL:
         MemRegister = ProgramCounter++;
-        Argument    = to_string(RAMContent[MemRegister]);
         if (!updateMachine())
           return;
         break;
