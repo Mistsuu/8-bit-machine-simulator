@@ -4,17 +4,6 @@
 # ------------------------  ------------   ----------------------
 #   [end + 12 : end + 16] =  3881432243  -> [179, 244,  89, 231]
 
-
-ldi 38
-sta end_of_code + 16
-ldi 78
-sta end_of_code + 17
-ldi 136
-sta end_of_code + 18
-ldi 215
-sta end_of_code + 19
-
-
 init:
     # If data is conflicted with
     # code, we just stop executing.
