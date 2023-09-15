@@ -20,21 +20,21 @@ using namespace std;
 
 #define CLK_SPEED 100 // Limited to 100 HZ
 
-#define NOP 0b0000
-#define LDA 0b0001
-#define ADD 0b0010
-#define SUB 0b0011
-#define STA 0b0100
-#define LDI 0b0101
-#define JMP 0b0110
-#define JC  0b0111
-#define JZ  0b1000
-#define AEI 0b1001
-#define SEI 0b1010
-#define SHL 0b1011
-#define SLF 0b1101
-#define _OUT 0b1110
-#define HLT 0b1111
+#define NOP  0b00000000
+#define LDA  0b00010000
+#define ADD  0b00100000
+#define SUB  0b00110000
+#define STA  0b01000000
+#define LDI  0b01010000
+#define JMP  0b01100000
+#define JC   0b01110000
+#define JZ   0b10000000
+#define AEI  0b10010000
+#define SEI  0b10100000
+#define SHL  0b10110000
+#define SLF  0b11010000
+#define _OUT 0b11100000
+#define HLT  0b11110000
 
 //////////////////////// For Program ///////////////////////////////////
 uint8_t MemRegister;
@@ -699,19 +699,11 @@ bool checkByteLine(string &byteLine) {
   return true;
 }
 
-// A function to keep the rule of OPCodes
-uint8_t extractOPCode(string byteLine) {
-  uint8_t opcode = 0;
-  for (int i = 0; i < 4; ++i)
-    if (byteLine[i] == '1') 
-      opcode |= (1 << (3 - i));
-  return opcode;
-}
-
-uint8_t extractArgument(string byteLine) {
+uint8_t extractData(string byteLine) {
   uint8_t argumentData = 0;
   for (int i = 0; i < 8; ++i) {
-    if (byteLine[i] == '1') argumentData |= (1 << (7 - i));
+    if (byteLine[i] == '1') 
+      argumentData |= (1 << (7 - i));
   }
   return argumentData;
 }
@@ -721,7 +713,6 @@ bool checkData(string filename) {
 
   fstream byteFile;             // open machine code file
   string  byteLine;             // line of byte code
-  string  getMode = "command";  // mode of getting file
 
   byteFile.open(filename, fstream::in);
   if (!byteFile) {
@@ -741,29 +732,8 @@ bool checkData(string filename) {
       return false;
     }
 
-    // Get data in accordance to mode
-    if (getMode == "command") {
-      RAMContent[i] = extractOPCode(byteLine);
-      switch(RAMContent[i]) {
-        case LDA:
-        case ADD:
-        case SUB:
-        case STA:
-        case LDI:
-        case JMP:
-        case JC:
-        case JZ:
-        case AEI:
-        case SEI:
-        case SHL:
-          getMode = "argument";
-          break;
-      }
-    }
-    else if (getMode == "argument") {
-      RAMContent[i] = extractArgument(byteLine);
-      getMode = "command";
-    }
+    // Get data, simple
+    RAMContent[i] = extractData(byteLine);
   }
 
   cout << "[debug] File ready to run." << endl;

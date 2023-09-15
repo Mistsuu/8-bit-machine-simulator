@@ -7,21 +7,26 @@
 using namespace std;
 
 /* opcode -> bytecode */
-#define NOP 0b0000
-#define LDA 0b0001
-#define ADD 0b0010
-#define SUB 0b0011
-#define STA 0b0100
-#define LDI 0b0101
-#define JMP 0b0110
-#define JC  0b0111
-#define JZ  0b1000
-#define AEI 0b1001
-#define SEI 0b1010
-#define SHL 0b1011
-#define SLF 0b1101
-#define OUT 0b1110
-#define HLT 0b1111
+// 4 bytes on the bottom
+// are unused because
+// I forgot to buy 1 more
+// ROM chip to have 8-bit
+// instruction set :'(
+#define NOP  0b00000000
+#define LDA  0b00010000
+#define ADD  0b00100000
+#define SUB  0b00110000
+#define STA  0b01000000
+#define LDI  0b01010000
+#define JMP  0b01100000
+#define JC   0b01110000
+#define JZ   0b10000000
+#define AEI  0b10010000
+#define SEI  0b10100000
+#define SHL  0b10110000
+#define SLF  0b11010000
+#define _OUT 0b11100000
+#define HLT  0b11110000
 
 /* alphabet */
 map<string, int> code;
@@ -131,7 +136,7 @@ void mapOPCode() {
   code["SEI"] = SEI;
   code["SHL"] = SHL;
   code["SLF"] = SLF;
-  code["OUT"] = OUT;
+  code["OUT"] = _OUT;
   code["HLT"] = HLT;
   
   // For lowercase users
@@ -148,7 +153,7 @@ void mapOPCode() {
   code["sei"] = SEI;
   code["shl"] = SHL;
   code["slf"] = SLF;
-  code["out"] = OUT;
+  code["out"] = _OUT;
   code["hlt"] = HLT;
 }
 
@@ -289,11 +294,8 @@ bool compileInstructions(fstream& codeFile, map<string, int>& variableMap, vecto
       return false;
     }
 
-    // Shift 4 to the left as
-    // I forgot to buy 1 more
-    // ROM to have 8-bit
-    // instruction set :'(
-    InitRAMContent.push_back(code[opcode] << 4);
+    // Write bytecode to memory
+    InitRAMContent.push_back(code[opcode]);
 
     int variableAddress = 0;
     int iOptionalArgument = 0;
@@ -382,7 +384,7 @@ bool compileInstructions(fstream& codeFile, map<string, int>& variableMap, vecto
       /* 0 argument required. */
       case NOP:
       case HLT:
-      case OUT:
+      case _OUT:
       case SLF:
         if (argument != "") {
           cout << "[error] Argument doesn't exist for this instruction \"" << opcode << "\"." << endl;
