@@ -227,6 +227,8 @@ bool compileTags(fstream& codeFile, map<string, int>& variableMap) {
 }
 
 bool compileInstructions(fstream& codeFile, map<string, int>& variableMap, vector<int>& InitRAMContent) {
+  cout << "[debug] Compiling the instructions..." << endl;
+
   /* Part of code */
   stringstream ssin;          // Parse int & strings
   string codeLine;            // One code line
@@ -261,7 +263,19 @@ bool compileInstructions(fstream& codeFile, map<string, int>& variableMap, vecto
     }
 
     // Print parsed assembly to STDOUT
-    cout << opcode << " " << argument << endl;
+    cout << "     -> " << opcode << " " << argument << endl;
+
+    // Writes the raw data into memory
+    // if it's integer.
+    if (isInt(opcode)) {
+      if (argument != "") {
+        cout << "[error] For integer as raw data in the code, there can only be one number per line." << endl;
+        return false;
+      }
+
+      InitRAMContent.push_back(toInteger(opcode));
+      continue;
+    }
 
     // Skip tags
     if (isTag(opcode)) {
@@ -377,6 +391,12 @@ bool compileInstructions(fstream& codeFile, map<string, int>& variableMap, vecto
 
         break;
     }
+  }
+
+  // Memory limit handling :'3
+  if (InitRAMContent.size() > 256) {
+    cout << "[error] Machine only has 256 addresses to store stuffs :< This code compiles to " << InitRAMContent.size() << " bytes." << endl;
+    return false;
   }
 
   // Add the remaining memory space to fill up 256 blocks of memory

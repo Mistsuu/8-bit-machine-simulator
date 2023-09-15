@@ -1,0 +1,72 @@
+# Adding 2 32-bit values
+#   [end + 04 : end + 08] =  3616034342  -> [ 38,  78, 136, 215]
+# + [end + 08 : end + 12] =   265397901  -> [141, 166, 209,  15]
+# ------------------------  ------------   ----------------------
+#   [end + 12 : end + 16] =  3881432243  -> [179, 244,  89, 231]
+
+
+ldi 38
+sta end_of_code + 16
+ldi 78
+sta end_of_code + 17
+ldi 136
+sta end_of_code + 18
+ldi 215
+sta end_of_code + 19
+
+
+init:
+    # If data is conflicted with
+    # code, we just stop executing.
+    ldi end_of_code
+    aei 10
+    jc not_enough_mem
+
+    ldi end_of_stack + 1
+    sta modifiable_read_addr + 1
+
+    ldi end_of_stack
+    sta modifiable_write_addr + 1
+
+mod_write_addr:
+    lda modifiable_read_addr + 1
+    sei 1
+    sta modifiable_read_addr + 1
+
+    lda modifiable_write_addr + 1
+    sei 1
+    sta modifiable_write_addr + 1
+
+    sei end_of_code
+    jc init
+    aei end_of_code
+
+modifiable_read_addr:
+    lda end_of_stack
+    aei 1
+modifiable_write_addr:
+    sta end_of_stack
+    jmp mod_write_addr
+
+not_enough_mem:
+    hlt
+
+end_of_code:
+
+# Some padding to fill in RAM
+0
+0
+0
+0
+
+# First integer
+38
+78
+136
+215
+
+# Second integer
+141
+166
+209
+15
