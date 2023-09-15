@@ -24,6 +24,7 @@ using namespace std;
 #define AEI  0b10010000
 #define SEI  0b10100000
 #define SHL  0b10110000
+#define PTA  0b11000000
 #define SLF  0b11010000
 #define _OUT 0b11100000
 #define HLT  0b11110000
@@ -136,6 +137,7 @@ void mapOPCode() {
   code["SEI"] = SEI;
   code["SHL"] = SHL;
   code["SLF"] = SLF;
+  code["PTA"] = PTA;
   code["OUT"] = _OUT;
   code["HLT"] = HLT;
   
@@ -153,6 +155,7 @@ void mapOPCode() {
   code["sei"] = SEI;
   code["shl"] = SHL;
   code["slf"] = SLF;
+  code["pta"] = PTA;
   code["out"] = _OUT;
   code["hlt"] = HLT;
 }
@@ -386,6 +389,7 @@ bool compileInstructions(fstream& codeFile, map<string, int>& variableMap, vecto
       case HLT:
       case _OUT:
       case SLF:
+      case PTA:
         if (argument != "") {
           cout << "[error] Argument doesn't exist for this instruction \"" << opcode << "\"." << endl;
           return false;
