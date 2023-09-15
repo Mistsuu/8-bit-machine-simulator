@@ -46,6 +46,7 @@ uint8_t ProgramCounter;
 uint8_t OutRegister;
 uint8_t ZeroFlag;
 uint8_t CarryFlag;
+string  Argument;        /* for debugging only, not in actual machine */
 static volatile int ProgramRun = 1;
 
 ////////////////////// Output modes //////////////////////////////////////
@@ -147,59 +148,60 @@ int cycleCounting = 0;
     cout << "[] Mem Register    : "; outputBinary(MemRegister);    cout << "   " << "[] Ram Content  : "; outputBinary(RAMContent[MemRegister]); cout << endl;
     cout << "[] A   Register    : "; outputBinary(ARegister);      cout << "   " << "[] B   Register : "; outputBinary(BRegister);               cout << endl;
     cout << "[] Sum Register    : "; outputBinary(SumRegister);    cout << "   " << "(ZF: " << unsigned(ZeroFlag) << ", CF: " << unsigned(CarryFlag) << ")" << endl;
-    cout << "[] Program Counter : "; outputBinary(ProgramCounter); cout << "   " << "[] Instruction  : "; outputBinary(Instruction); cout << " (";
+    cout << "[] Program Counter : "; outputBinary(ProgramCounter); cout << "   " << "[] Instruction  : "; outputBinary(Instruction);
+    
+    cout << " -> ";
     switch(Instruction) {
       case LDA:
-        cout << "LDA";
+        cout << "LDA " << Argument;
         break;
       case ADD:
-        cout << "ADD";
+        cout << "ADD " << Argument;
         break;
       case SUB:
-        cout << "SUB";
+        cout << "SUB " << Argument;
         break;
       case STA:
-        cout << "STA";
+        cout << "STA " << Argument;
         break;
       case LDI:
-        cout << "LDI";
+        cout << "LDI " << Argument;
         break;
       case JMP:
-        cout << "JMP";
+        cout << "JMP " << Argument;
         break;
       case JC:
-        cout << "JC";
+        cout << "JC " << Argument;
         break;
       case JZ:
-        cout << "JZ";
+        cout << "JZ " << Argument;
         break;
       case AEI:
-        cout << "AEI";
+        cout << "AEI " << Argument;
         break;
       case SEI:
-        cout << "SEI";
+        cout << "SEI " << Argument;
         break;
       case SHL:
-        cout << "SHL";
+        cout << "SHL " << Argument;
         break;
       case HLT:
-        cout << "HLT";
+        cout << "HLT " << Argument;
         break;
       case _OUT:
-        cout << "OUT";
+        cout << "OUT " << Argument;
         break;
       case SLF:
-        cout << "SLF";
+        cout << "SLF " << Argument;
         break;
       case NOP:
-        cout << "NOP";
+        cout << "NOP " << Argument;
         break;
       default:
         cout << "Not recognized";
         ProgramRun = 0;
         break;
     }
-    cout << ") " << endl;
     cout << endl;
 
     cout << ">>> Output: [[";
@@ -340,59 +342,59 @@ int cycleCounting = 0;
     safe_printw("[] Sum Register    : "); outputBinary(SumRegister);    safe_printw("   "); safe_printw("(ZF: "); safe_printw("%u", ZeroFlag); safe_printw(", CF: "); safe_printw("%u", CarryFlag); safe_printw(")"); safe_printw("\n");
     safe_printw("[] Program Counter : "); outputBinary(ProgramCounter); safe_printw("   "); safe_printw("[] Instruction  : "); outputBinary(Instruction); 
     
-    safe_printw(" (");
+    safe_printw(" -> ");
     switch(Instruction) {
       case LDA:
-        safe_printw("LDA");
+        safe_printw("LDA %s", &Argument[0]);
         break;
       case ADD:
-        safe_printw("ADD");
+        safe_printw("ADD %s", &Argument[0]);
         break;
       case SUB:
-        safe_printw("SUB");
+        safe_printw("SUB %s", &Argument[0]);
         break;
       case STA:
-        safe_printw("STA");
+        safe_printw("STA %s", &Argument[0]);
         break;
       case LDI:
-        safe_printw("LDI");
+        safe_printw("LDI %s", &Argument[0]);
         break;
       case JMP:
-        safe_printw("JMP");
+        safe_printw("JMP %s", &Argument[0]);
         break;
       case JC:
-        safe_printw("JC");
+        safe_printw("JC %s", &Argument[0]);
         break;
       case JZ:
-        safe_printw("JZ");
+        safe_printw("JZ %s", &Argument[0]);
         break;
       case AEI:
-        safe_printw("AEI");
+        safe_printw("AEI %s", &Argument[0]);
         break;
       case SEI:
-        safe_printw("SEI");
+        safe_printw("SEI %s", &Argument[0]);
         break;
       case SHL:
-        safe_printw("SHL");
+        safe_printw("SHL %s", &Argument[0]);
         break;
       case HLT:
-        safe_printw("HLT");
+        safe_printw("HLT %s", &Argument[0]);
         break;
       case _OUT:
-        safe_printw("OUT");
+        safe_printw("OUT %s", &Argument[0]);
         break;
       case SLF:
-        safe_printw("SLF");
+        safe_printw("SLF %s", &Argument[0]);
         break;
       case NOP:
-        safe_printw("NOP");
+        safe_printw("NOP %s", &Argument[0]);
         break;
       default:
         safe_printw("Not recognized");
         ProgramRun = 0;
         break;
     }
-    safe_printw(")\n");
+    safe_printw("\n");
 
     safe_printw("\n");
     safe_printw(">>> Output: [[");
@@ -461,12 +463,15 @@ void run() {
   initRegisters();
 
   while (ProgramRun) {
-    if (!updateMachine()) return;
+    if (!updateMachine())
+      return;
 
     // Fetch Instruction
     MemRegister = ProgramCounter++;
     Instruction = RAMContent[MemRegister];
-    if (!updateMachine()) return;
+    Argument    = "";
+    if (!updateMachine())
+      return;
 
     // Get argument
     switch(Instruction) {
@@ -482,7 +487,9 @@ void run() {
       case SEI:
       case SHL:
         MemRegister = ProgramCounter++;
-        if (!updateMachine()) return;
+        Argument    = to_string(RAMContent[MemRegister]);
+        if (!updateMachine())
+          return;
         break;
     }
 
@@ -490,51 +497,62 @@ void run() {
     switch(Instruction) {
       case LDA:
         MemRegister = RAMContent[MemRegister];
-        if (!updateMachine()) return;
+        if (!updateMachine())
+          return;
 
         ARegister = RAMContent[MemRegister];
         SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, false);
-        if (!updateMachine()) return;
+        if (!updateMachine())
+          return;
         break;
 
       case ADD:
         MemRegister = RAMContent[MemRegister];
-        if (!updateMachine()) return;
+        if (!updateMachine())
+          return;
 
         BRegister = RAMContent[MemRegister];
         SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, true);
-        if (!updateMachine()) return;
+        if (!updateMachine())
+          return;
 
         ARegister = SumRegister;
         SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, false);
-        if (!updateMachine()) return;
+        if (!updateMachine())
+          return;
         break;
 
       case SUB:
         MemRegister = RAMContent[MemRegister];
-        if (!updateMachine()) return;
+        if (!updateMachine())
+          return;
 
         BRegister = RAMContent[MemRegister];
       	SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, true, true);
-      	if (!updateMachine()) return;
+      	if (!updateMachine())
+          return;
 
       	ARegister = SumRegister;
       	SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, false);
-        if (!updateMachine()) return;
+        if (!updateMachine())
+          return;
       	break;
 
       case STA:
         MemRegister = RAMContent[MemRegister];
-        if (!updateMachine()) return;
+        if (!updateMachine())
+          return;
 
       	RAMContent[MemRegister] = ARegister;
-      	if (!updateMachine()) return;
+      	if (!updateMachine())
+          return;
       	break;
 
       case LDI:
         ARegister = RAMContent[MemRegister];
         SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, false);
-        if (!updateMachine()) return;
+        if (!updateMachine())
+          return;
         break;
 
       case JC:
@@ -542,7 +560,8 @@ void run() {
           break;
 
         ProgramCounter = RAMContent[MemRegister];
-        if (!updateMachine()) return;
+        if (!updateMachine())
+          return;
         break;
 
       case JZ:
@@ -550,45 +569,54 @@ void run() {
           break;
 
         ProgramCounter = RAMContent[MemRegister];
-        if (!updateMachine()) return;
+        if (!updateMachine())
+          return;
         break;
 
       case JMP:
         ProgramCounter = RAMContent[MemRegister];
-        if (!updateMachine()) return;
+        if (!updateMachine())
+          return;
         break;
 
       case AEI:
         BRegister = RAMContent[MemRegister];
         SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, true);
-        if (!updateMachine()) return;
+        if (!updateMachine())
+          return;
 
         ARegister = SumRegister;
         SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, false);
-        if (!updateMachine()) return;
+        if (!updateMachine())
+          return;
         break;
 
       case SEI:
         BRegister = RAMContent[MemRegister];
       	SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, true, true);
-      	if (!updateMachine()) return;
+      	if (!updateMachine())
+          return;
 
       	ARegister = SumRegister;
       	SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, false);
-        if (!updateMachine()) return;
+        if (!updateMachine())
+          return;
       	break;
 
       case SHL:
         MemRegister = RAMContent[MemRegister];
-        if (!updateMachine()) return;
+        if (!updateMachine())
+          return;
 
         ARegister = BRegister = RAMContent[MemRegister];
         SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, true);
-        if (!updateMachine()) return;
+        if (!updateMachine())
+          return;
 
         ARegister = SumRegister;
         SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, false);
-        if (!updateMachine()) return;
+        if (!updateMachine())
+          return;
         break;
 
       case HLT:
@@ -597,17 +625,20 @@ void run() {
 
       case _OUT:
         OutRegister = ARegister;
-        if (!updateMachine()) return;
+        if (!updateMachine())
+          return;
         break;
 
       case SLF:
         BRegister = ARegister;
         SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, true);
-        if (!updateMachine()) return;
+        if (!updateMachine())
+          return;
 
         ARegister = SumRegister;
         SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, false);
-        if (!updateMachine()) return;
+        if (!updateMachine())
+          return;
         break;
 
       case NOP:

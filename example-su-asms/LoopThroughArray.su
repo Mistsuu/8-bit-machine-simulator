@@ -1,0 +1,26 @@
+init:
+    ldi end_of_stack
+    sta modifiable_write_code0 + 1
+    sta modifiable_write_code1 + 1
+
+mod_write_addr:
+    lda modifiable_write_code0 + 1
+    sei 1
+    sta modifiable_write_code0 + 1
+
+    sei end_of_code
+    jc init
+    aei end_of_code
+
+    lda modifiable_write_code1 + 1
+    sei 1
+    sta modifiable_write_code1 + 1
+
+modifiable_write_code0:
+    lda end_of_stack
+    aei 1
+modifiable_write_code1:
+    sta end_of_stack
+    jmp mod_write_addr
+
+end_of_code:
