@@ -434,7 +434,7 @@ uint8_t performArithmetic(uint8_t A, uint8_t B, uint8_t &ZeroFlag, uint8_t &Carr
     result_16 = A_16 + B_16;
 
   if (FLAG_IN) {
-    CarryFlag = (result_16 >> 8) & 0x1;
+    CarryFlag = ((result_16 >> 8) & 0x1) ^ SUB_FLAG;
     ZeroFlag  = ((result_16 & 0b11111111) == 0);
   }
 
