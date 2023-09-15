@@ -42,7 +42,7 @@ Here is the output image:
 <p align="center">
     <img src="img/run-run"/>
     <p align="center">
-        <i>Not really user-friendly tho...</i>
+        <i>I think it is a bit better now...?</i>
     </p>
 </p>
 
