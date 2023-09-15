@@ -13,25 +13,25 @@
 
 ////////////////////////////
 // For control signal
-#define HLT 0b1000000000000000
-#define MI  0b0100000000000000
-#define RI  0b0010000000000000
-#define RO  0b0001000000000000
-#define IO  0b0000100000000000
-#define II  0b0000010000000000
-#define AO  0b0000001000000000
-#define AI  0b0000000100000000
-#define EO  0b0000000010000000
-#define SUB 0b0000000001000000
-#define BI  0b0000000000100000
-#define OI  0b0000000000010000
+#define HLT 0b1000000000000000    /* halt signal */
+#define MI  0b0100000000000000    /* memory in */
+#define RI  0b0010000000000000    /* RAM in */
+#define RO  0b0001000000000000    /* RAM out */
+#define IO  0b0000100000000000    /* instruction out (never used, hmm~) */
+#define II  0b0000010000000000    /* instruction in */
+#define AO  0b0000001000000000    /* A register out */
+#define AI  0b0000000100000000    /* A register in */
+#define EO  0b0000000010000000    /* sum register out (E looks like sigma symbol) */
+#define SUB 0b0000000001000000    /* subtract signal */
+#define BI  0b0000000000100000    /* B register in */
+#define OI  0b0000000000010000    /* output display in */
 #define CE  0b0000000000001000
-#define J   0b0000000000000100
+#define J   0b0000000000000100    /* program counter in */
 #define CO  0b0000000000000010
-#define FI  0b0000000000000001
+#define FI  0b0000000000000001    /* flag in -- specify if we need to update zero/carry flag */
 
 ////////////////////////////
-// For flags
+// For sum flags
 #define FLAG_C0Z0 0b00
 #define FLAG_C0Z1 0b01
 #define FLAG_C1Z0 0b10
@@ -51,6 +51,7 @@
 #define _AEI 0b1001
 #define _SEI 0b1010
 #define _SHL 0b1011
+#define _PTA 0b1100
 #define _SLF 0b1101
 #define _OUT 0b1110
 #define _HLT 0b1111
@@ -68,7 +69,7 @@ const PROGMEM uint16_t UCODE_TEMPLATE[16][8] = {
   { MI|CO, RO|II|CE, CO|MI|CE, RO|BI,    EO|AI|FI,     0,            0, 0 }, // 1001 - AEI (add effective immediately)
   { MI|CO, RO|II|CE, CO|MI|CE, RO|BI,    EO|AI|SUB|FI, 0,            0, 0 }, // 1010 - SEI (subtract effective immediately)
   { MI|CO, RO|II|CE, CO|MI|CE, RO|MI,    RO|AI|BI,     EO|AI|FI,     0, 0 }, // 1011 - SHL (shift left)
-  { MI|CO, RO|II|CE, 0,        0,        0,            0,            0, 0 }, // 1100
+  { MI|CO, RO|II|CE, AO|MI,    AI|RO,    0,            0,            0, 0 }, // 1100 - PTA (set A register to pointer to A)
   { MI|CO, RO|II|CE, AO|BI,    EO|AI|FI, 0,            0,            0, 0 }, // 1101 - SLF (shift left FAST)
   { MI|CO, RO|II|CE, AO|OI,    0,        0,            0,            0, 0 }, // 1110 - OUT (output content of A register)
   { MI|CO, RO|II|CE, HLT,      0,        0,            0,            0, 0 }, // 1111 - HLT (halt the clock)
