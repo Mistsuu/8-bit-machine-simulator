@@ -328,6 +328,7 @@ int cycleCounting = 0;
     safe_printw("[] Memory:\n");
     for (int i = 0; i < 16; ++i) {
       safe_printw("   ");
+      safe_printw("%02x || ", i*16);
       for (int j = 0; j < 16; ++j) {
         safe_printw("%02x ", RAMContent[i*16+j]);
         if (j == 7)
