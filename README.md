@@ -33,8 +33,8 @@ g++ run.cpp -o run -lncurses
 You can find the files ending with `.su` *(Mist**"su"**u, surpriseee)* in the `example-su-asms` folder. They are my own test assembly babies. You could compile them with the `parser` file. It will drop out a similar file name with `.out` ending, and you use `run` file to run that!
 
 ```bash
-./parser examples-su-asms/Fibonacci.su
-./run examples-su-asms/Fibonacci.out
+./parser examples-su-asms/LoopThroughArray.su
+./run examples-su-asms/LoopThroughArray.out
 ```
 
 Here is the output image:
