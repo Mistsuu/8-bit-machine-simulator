@@ -222,7 +222,7 @@ bool compileTags(fstream& codeFile, map<string, int>& variableMap) {
   if (tagNames.size() > 0)
     cout << "[debug] Added following tags..." << endl;
   for (unsigned int iName = 0; iName < tagNames.size(); ++iName)
-    cout << "    [+] " << tagNames[iName] << ": " << toBinaryString(variableMap[tagNames[iName]], 8) << endl;
+    cout << "    [+] " << tagNames[iName] << ": " << toBinaryString(variableMap[tagNames[iName]], 8) << " (" << variableMap[tagNames[iName]] << ")" << endl;
   return true;
 }
 
@@ -387,7 +387,7 @@ bool compileInstructions(fstream& codeFile, map<string, int>& variableMap, vecto
   if (variableNames.size() > 0)
     cout << "[debug] Added variables: " << endl;
   for (unsigned int iName = 0; iName < variableNames.size(); ++iName)
-    cout << "    [+] " << variableNames[iName] << ": " << toBinaryString(variableMap[variableNames[iName]], 8) << endl;
+    cout << "    [+] " << variableNames[iName] << ": " << toBinaryString(variableMap[variableNames[iName]], 8) << " (" << variableMap[variableNames[iName]] << ")" << endl;
   return true;
 }
 
