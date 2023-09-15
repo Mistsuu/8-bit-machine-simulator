@@ -126,11 +126,28 @@ int cycleCounting = 0;
     }
   }
 
+  void outputHex(uint8_t number) {
+    char hexAlphabet[] = "0123456789abcdef";
+    cout << hexAlphabet[number >> 4] << hexAlphabet[number & 0xf];
+  }
+
   inline void displayInfo() {
-    cout << "[] Mem Register   : "; outputBinary(MemRegister);    cout << "   " << "[] Ram Content : "; outputBinary(RAMContent[MemRegister]); cout << endl;
-    cout << "[] A   Register   : "; outputBinary(ARegister);      cout << "   " << "[] B   Register: "; outputBinary(BRegister);               cout << endl;
-    cout << "[] Sum Register   : "; outputBinary(SumRegister);    cout << "   " << "(ZF: " << unsigned(ZeroFlag) << ", CF: " << unsigned(CarryFlag) << ")" << endl;
-    cout << "[] Program Counter: "; outputBinary(ProgramCounter); cout << "   " << "[] Instruction : "; outputBinary(Instruction); cout << "(";
+    cout << "[] Memory:\n";
+    for (int i = 0; i < 16; ++i) {
+      cout << "   ";
+      for (int j = 0; j < 16; ++j) {
+        safe_printw("%02x ", RAMContent[i*16+j]);
+        if (j == 7)
+          cout << " ";
+      }
+      cout << endl;
+    }
+    cout << endl;
+
+    cout << "[] Mem Register    : "; outputBinary(MemRegister);    cout << "   " << "[] Ram Content  : "; outputBinary(RAMContent[MemRegister]); cout << endl;
+    cout << "[] A   Register    : "; outputBinary(ARegister);      cout << "   " << "[] B   Register : "; outputBinary(BRegister);               cout << endl;
+    cout << "[] Sum Register    : "; outputBinary(SumRegister);    cout << "   " << "(ZF: " << unsigned(ZeroFlag) << ", CF: " << unsigned(CarryFlag) << ")" << endl;
+    cout << "[] Program Counter : "; outputBinary(ProgramCounter); cout << "   " << "[] Instruction  : "; outputBinary(Instruction); cout << " (";
     switch(Instruction) {
       case LDA:
         cout << "LDA";
@@ -306,12 +323,24 @@ int cycleCounting = 0;
   }
 
   inline void displayInfo() {
-    safe_printw("[] Mem Register   : "); outputBinary(MemRegister);    safe_printw("   "); safe_printw("[] Ram Content : "); outputBinary(RAMContent[MemRegister]);                              safe_printw("\n");
-    safe_printw("[] A   Register   : "); outputBinary(ARegister);      safe_printw("   "); safe_printw("[] B   Register: "); outputBinary(BRegister);                                            safe_printw("\n");
-    safe_printw("[] Sum Register   : "); outputBinary(SumRegister);    safe_printw("   "); safe_printw("(ZF: "); safe_printw("%u", ZeroFlag); safe_printw(", CF: "); safe_printw("%u", CarryFlag); safe_printw(")"); safe_printw("\n");
-    safe_printw("[] Program Counter: "); outputBinary(ProgramCounter); safe_printw("   "); safe_printw("[] Instruction : "); outputBinary(Instruction); 
+    safe_printw("[] Memory:\n");
+    for (int i = 0; i < 16; ++i) {
+      safe_printw("   ");
+      for (int j = 0; j < 16; ++j) {
+        safe_printw("%02x ", RAMContent[i*16+j]);
+        if (j == 7)
+          safe_printw(" ");
+      }
+      safe_printw("\n");
+    }
+    safe_printw("\n");
+
+    safe_printw("[] Mem Register    : "); outputBinary(MemRegister);    safe_printw("   "); safe_printw("[] Ram Content  : "); outputBinary(RAMContent[MemRegister]);                               safe_printw("\n");
+    safe_printw("[] A   Register    : "); outputBinary(ARegister);      safe_printw("   "); safe_printw("[] B   Register : "); outputBinary(BRegister);                                             safe_printw("\n");
+    safe_printw("[] Sum Register    : "); outputBinary(SumRegister);    safe_printw("   "); safe_printw("(ZF: "); safe_printw("%u", ZeroFlag); safe_printw(", CF: "); safe_printw("%u", CarryFlag); safe_printw(")"); safe_printw("\n");
+    safe_printw("[] Program Counter : "); outputBinary(ProgramCounter); safe_printw("   "); safe_printw("[] Instruction  : "); outputBinary(Instruction); 
     
-    safe_printw("(");
+    safe_printw(" (");
     switch(Instruction) {
       case LDA:
         safe_printw("LDA");
