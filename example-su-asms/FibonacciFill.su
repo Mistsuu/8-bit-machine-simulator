@@ -1,0 +1,45 @@
+# Filling fibonacci sequence mod 256, 
+# to address 0xff, 0xfe, 0xfd, ... 
+# to the place right before code ends.
+
+ldi 0
+sta end_of_stack
+
+ldi 1
+sta end_of_stack - 1
+
+init:
+    ldi end_of_stack + 1
+    sta modifiable_read_addr + 1
+
+    ldi end_of_stack
+    sta modifiable_read_addr + 3
+
+    ldi end_of_stack - 1
+    sta modifiable_write_addr + 1
+
+mod_write_addr:
+    lda modifiable_read_addr + 1
+    sei 1
+    sta modifiable_read_addr + 1
+
+    lda modifiable_read_addr + 3
+    sei 1
+    sta modifiable_read_addr + 3
+
+    lda modifiable_write_addr + 1
+    sei 1
+    sta modifiable_write_addr + 1
+
+    sei end_of_code
+    jc init
+    aei end_of_code
+
+modifiable_read_addr:
+    lda end_of_stack + 2
+    add end_of_stack + 1
+modifiable_write_addr:
+    sta end_of_stack
+    jmp mod_write_addr
+
+end_of_code:
