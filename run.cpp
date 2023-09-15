@@ -32,6 +32,7 @@ using namespace std;
 #define AEI  0b10010000
 #define SEI  0b10100000
 #define SHL  0b10110000
+#define PTA  0b11000000
 #define SLF  0b11010000
 #define _OUT 0b11100000
 #define HLT  0b11110000
@@ -190,6 +191,9 @@ int cycleCounting = 0;
         break;
       case _OUT:
         cout << "OUT " << Argument;
+        break;
+      case PTA:
+        cout << "PTA " << Argument;
         break;
       case SLF:
         cout << "SLF " << Argument;
@@ -383,6 +387,9 @@ int cycleCounting = 0;
         break;
       case _OUT:
         safe_printw("OUT %s", &Argument[0]);
+        break;
+      case PTA:
+        safe_printw("PTA %s", &Argument[0]);
         break;
       case SLF:
         safe_printw("SLF %s", &Argument[0]);
@@ -646,6 +653,18 @@ void run() {
         OutRegister = ARegister;
         if (!updateMachine())
           return;
+        break;
+
+      case PTA:
+        MemRegister = ARegister;
+        if (!updateMachine())
+          return;
+
+        ARegister = RAMContent[MemRegister];
+        SumRegister = performArithmetic(ARegister, BRegister, ZeroFlag, CarryFlag, false, true);
+        if (!updateMachine())
+          return;
+
         break;
 
       case SLF:
