@@ -2,7 +2,7 @@
 #   [end + 04 : end + 08] =  3616034342  -> [ 38,  78, 136, 215]
 # + [end + 08 : end + 12] =   265397901  -> [141, 166, 209,  15]
 # ------------------------  ------------   ----------------------
-#   [end + 12 : end + 16] =  3881432243  -> [179, 244,  89, 231]
+#   [end + 12 : end + 17] =  3881432243  -> [179, 244,  89, 231, 0]
 
 # =================================== CODE ===================================
 
@@ -14,14 +14,49 @@ init:
     sta main_op + 3
 
     ldi result
-    sta main_op + 5
+    sta carry_op + 5
+    sta carry_op + 7
+
+    ldi result + 1
+    sta carry_op + 1
+    sta carry_op2 + 1
+    sta carry_op2 + 3
 
 main_op:
-    lda __read_addr_arg0__       # It's going to be replaced in the future
+    lda __read_addr_arg0__
     add __read_addr_arg1__
-    sta __write_addr_res__       # It's going to be replaced in the future
-    
-    jc carry_op
+    sta tmp_add
+
+    jc result_has_carry
+
+    # Not carry
+    ldi 0
+    jmp carry_op
+
+result_has_carry:
+    # Carry
+    ldi 1
+
+carry_op:
+    sta __write_nextaddr_res__
+
+    lda tmp_add
+    add __write_addr_res__       
+    sta __write_addr_res__ 
+
+    jc result_has_carry2
+
+    # Not carry
+    ldi 0
+    jmp carry_op2
+
+result_has_carry2:
+    # Carry
+    ldi 1
+
+carry_op2:
+    add __write_nextaddr_res__
+    sta __write_nextaddr_res__
 
 mod_write_addr:
     # Increment pointer to arg0 by 1
@@ -29,16 +64,27 @@ mod_write_addr:
     aei 1
     sta main_op + 1
 
+    # Exit loop when there's no data
+    sei first_number + 4
+    jz end_of_code
+
     # Increment pointer to arg1 by 1
     lda main_op + 3
     aei 1
     sta main_op + 3
 
-    # Increment pointer to result by 1
-    lda main_op + 5
+    lda carry_op + 5
     aei 1
-    sta main_op + 5
+    sta carry_op + 5
+    sta carry_op + 7
 
+    lda carry_op + 1
+    aei 1
+    sta carry_op + 1
+    sta carry_op2 + 1
+    sta carry_op2 + 3
+
+    # Loop back to main
     jmp main_op
 
 end_of_code:
@@ -46,7 +92,40 @@ end_of_code:
 
 # =================================== DATA ===================================
 
-padding:
+# Padding pretty, easy to look, that's all
+0
+0
+0
+
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
 0
 0
 0
@@ -65,7 +144,15 @@ second_number:
 15
 
 result:
-1
-2
-3
-4
+0
+0
+0
+0
+0
+
+# Padding pretty, easy to look, that's all
+0
+0
+
+tmp_add:
+0
