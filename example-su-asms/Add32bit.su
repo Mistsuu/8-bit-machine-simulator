@@ -4,58 +4,68 @@
 # ------------------------  ------------   ----------------------
 #   [end + 12 : end + 16] =  3881432243  -> [179, 244,  89, 231]
 
+# =================================== CODE ===================================
+
 init:
-    # If data is conflicted with
-    # code, we just stop executing.
-    ldi end_of_code
-    aei 10
-    jc not_enough_mem
+    ldi first_number
+    sta main_op + 1
 
-    ldi end_of_stack + 1
-    sta modifiable_read_addr + 1
+    ldi second_number
+    sta main_op + 3
 
-    ldi end_of_stack
-    sta modifiable_write_addr + 1
+    ldi result
+    sta main_op + 5
+
+main_op:
+    lda __read_addr_arg0__       # It's going to be replaced in the future
+    add __read_addr_arg1__
+    sta __write_addr_res__       # It's going to be replaced in the future
+    
+    jc carry_op
 
 mod_write_addr:
-    lda modifiable_read_addr + 1
-    sei 1
-    sta modifiable_read_addr + 1
-
-    lda modifiable_write_addr + 1
-    sei 1
-    sta modifiable_write_addr + 1
-
-    sei end_of_code
-    jc init
-    aei end_of_code
-
-modifiable_read_addr:
-    lda end_of_stack
+    # Increment pointer to arg0 by 1
+    lda main_op + 1
     aei 1
-modifiable_write_addr:
-    sta end_of_stack
-    jmp mod_write_addr
+    sta main_op + 1
 
-not_enough_mem:
-    hlt
+    # Increment pointer to arg1 by 1
+    lda main_op + 3
+    aei 1
+    sta main_op + 3
+
+    # Increment pointer to result by 1
+    lda main_op + 5
+    aei 1
+    sta main_op + 5
+
+    jmp main_op
 
 end_of_code:
+    hlt
 
-# Some padding to fill in RAM
+# =================================== DATA ===================================
+
+padding:
 0
 0
 0
 0
 
-# First integer
+first_number:
 38
 78
 136
 215
 
-# Second integer
+second_number:
 141
 166
 209
 15
+
+result:
+1
+2
+3
+4
