@@ -8,8 +8,7 @@ sta d           # d = 1
 restart:
 lda n
 sub d           # _areg = n - d
-jc start
-jmp rebegin
+jc rebegin      # n > d: restart
 
 start:
 lda n           # _areg = n
@@ -17,8 +16,8 @@ lda n           # _areg = n
 loop:
 sub d           # _areg = _areg - d
 jz output       # if n - k*d == 0, then d divides n
-jc loop
-jmp increment
+jc increment
+jmp loop
 
 output:
 lda d
@@ -27,5 +26,5 @@ out
 increment:
 lda d
 aei 1
-sta d
+sta d           # d := d + 1
 jmp restart
