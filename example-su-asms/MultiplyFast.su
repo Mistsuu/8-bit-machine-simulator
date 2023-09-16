@@ -1,0 +1,65 @@
+# It's not worth it...
+# So I decided to rewrite this scheme!
+
+LDI 2
+STA x
+
+LDI 127
+STA y
+
+# Shift the y value, spread it across 
+# the stack
+LDA y
+STA y_sl_0
+SLF
+STA y_sl_1
+SLF
+STA y_sl_2
+SLF
+STA y_sl_3
+SLF
+STA y_sl_4
+SLF
+STA y_sl_5
+SLF
+STA y_sl_6
+SLF
+STA y_sl_7
+
+LDI 0
+STA result
+
+LDA x
+STA tmp
+
+LDI y_sl_7
+STA if_x_bit_is_1 + 1
+
+loop:
+    LDA tmp
+    SLF 
+    STA tmp
+
+    JC if_x_bit_is_1
+    JZ end
+
+    LDI 0
+
+add_to_result:
+    ADD result
+    STA result
+
+    LDA if_x_bit_is_1 + 1
+    AEI 1
+    STA if_x_bit_is_1 + 1
+
+    JMP loop 
+
+if_x_bit_is_1:
+    LDA __y_sl_xx__
+    JMP add_to_result
+
+end:
+    LDA result
+    OUT
+    HLT
