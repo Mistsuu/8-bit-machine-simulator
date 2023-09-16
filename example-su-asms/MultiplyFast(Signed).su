@@ -28,9 +28,11 @@ COMPARE:
 SHL y_tmp        # This is what makes the code cannot run if <y> >= 128
 SUB y
 
-JC IF_NOT_BIGGER
+JC IF_BIGGER
+JMP IF_NOT_BIGGER
 
 ################# If (y_tmp << 1) <= y #############################
+IF_BIGGER:
 
 SHL result_tmp
 STA result_tmp
